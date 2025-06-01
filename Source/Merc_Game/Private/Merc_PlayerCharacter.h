@@ -8,6 +8,7 @@
 
 class AMerc_Gun;
 class UCameraComponent;
+class UCharacterStateComponent;
 class UInputMappingContext;
 class UInputAction;
 class USpringArmComponent;
@@ -130,5 +131,7 @@ private:
 	float SprintSpeed;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float WalkAimSpeed;
+
+	UCharacterStateComponent* CharacterStateComp;
 
 };

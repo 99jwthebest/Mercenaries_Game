@@ -12,6 +12,8 @@
 #include "GameFramework/Controller.h"
 #include "InputActionValue.h"
 #include "Actors/Merc_Gun.h"
+#include "Components/CharacterStateComponent.h"
+
 
 // Sets default values
 AMerc_PlayerCharacter::AMerc_PlayerCharacter()
@@ -53,6 +55,7 @@ AMerc_PlayerCharacter::AMerc_PlayerCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	CharacterStateComp = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("Character State Component"));
 
 }
 
@@ -195,6 +198,9 @@ void AMerc_PlayerCharacter::AimStart()
 
 	CameraBoom->TargetArmLength = AimingCameraArmLength;
 	FollowCamera->FieldOfView = AimingCameraFOV;
+
+	CharacterStateComp->SetState(ECharacterStates::Aim);
+	SprintEnd();
 }
 
 void AMerc_PlayerCharacter::AimEnd()
@@ -203,10 +209,14 @@ void AMerc_PlayerCharacter::AimEnd()
 
 	CameraBoom->TargetArmLength = DefaultCameraArmLength;
 	FollowCamera->FieldOfView = DefaultCameraFOV;
+	CharacterStateComp->SetState(ECharacterStates::None);
 }
 
 void AMerc_PlayerCharacter::SprintStart()
 {
+	if (CharacterStateComp->GetState() == ECharacterStates::Aim)
+		return;
+
 	UE_LOG(LogTemp, Log, TEXT("Sprinting Started!!!!"));
 	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 	// Disable controller yaw rotation
