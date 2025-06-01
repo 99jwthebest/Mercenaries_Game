@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyCharacter.h"
+#include "Merc_PlayerCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/LocalPlayer.h"
@@ -13,13 +13,10 @@
 #include "InputActionValue.h"
 #include "Actors/Merc_Gun.h"
 
-//#include "GameMode/SimpleShooterGameModeBase.h"
-
 // Sets default values
-AMyCharacter::AMyCharacter()
+AMerc_PlayerCharacter::AMerc_PlayerCharacter()
 {
-
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Set size for collision capsule
@@ -60,10 +57,10 @@ AMyCharacter::AMyCharacter()
 }
 
 // Called when the game starts or when spawned
-void AMyCharacter::BeginPlay()
+void AMerc_PlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -85,15 +82,14 @@ void AMyCharacter::BeginPlay()
 }
 
 // Called every frame
-void AMyCharacter::Tick(float DeltaTime)
+void AMerc_PlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//UE_LOG(LogTemp, Error, TEXT("Speed: %f"), GetVelocity().Size());
 
 }
 
 // Called to bind functionality to input
-void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AMerc_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
@@ -104,23 +100,23 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyCharacter::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMerc_PlayerCharacter::Move);
 
 		// Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMerc_PlayerCharacter::Look);
 
 		// Shoot
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AMyCharacter::Shoot);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AMerc_PlayerCharacter::Shoot);
 
 		// Aim
-		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AMyCharacter::AimStart);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::AimStart);
 		// Aim
-		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMyCharacter::AimEnd);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMerc_PlayerCharacter::AimEnd);
 
 		// Sprint
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AMyCharacter::SprintStart);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::SprintStart);
 		// Sprint
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AMyCharacter::SprintEnd);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AMerc_PlayerCharacter::SprintEnd);
 
 	}
 	else
@@ -129,7 +125,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	}
 }
 
-void AMyCharacter::Move(const FInputActionValue& Value)
+void AMerc_PlayerCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
@@ -152,7 +148,7 @@ void AMyCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void AMyCharacter::Look(const FInputActionValue& Value)
+void AMerc_PlayerCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -165,7 +161,7 @@ void AMyCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-float AMyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+float AMerc_PlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float DamageToApply = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
@@ -188,12 +184,12 @@ float AMyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 
 }
 
-void AMyCharacter::Shoot()
+void AMerc_PlayerCharacter::Shoot()
 {
 	Gun->PullTrigger();
 }
 
-void AMyCharacter::AimStart()
+void AMerc_PlayerCharacter::AimStart()
 {
 	UE_LOG(LogTemp, Log, TEXT("Aiming Started!!!!"));
 
@@ -201,7 +197,7 @@ void AMyCharacter::AimStart()
 	FollowCamera->FieldOfView = AimingCameraFOV;
 }
 
-void AMyCharacter::AimEnd()
+void AMerc_PlayerCharacter::AimEnd()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Aiming Stopped!!!!"));
 
@@ -209,7 +205,7 @@ void AMyCharacter::AimEnd()
 	FollowCamera->FieldOfView = DefaultCameraFOV;
 }
 
-void AMyCharacter::SprintStart()
+void AMerc_PlayerCharacter::SprintStart()
 {
 	UE_LOG(LogTemp, Log, TEXT("Sprinting Started!!!!"));
 	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
@@ -220,7 +216,7 @@ void AMyCharacter::SprintStart()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
-void AMyCharacter::SprintEnd()
+void AMerc_PlayerCharacter::SprintEnd()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Sprinting Stopped!!!!"));
 	GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
@@ -233,19 +229,18 @@ void AMyCharacter::SprintEnd()
 }
 
 
-bool AMyCharacter::IsDead() const
+bool AMerc_PlayerCharacter::IsDead() const
 {
 	return CurrentHealth <= 0;
 }
 
-void AMyCharacter::AI_Shoot()
+void AMerc_PlayerCharacter::AI_Shoot()
 {
 	Gun->PullTrigger();
 
 }
 
-float AMyCharacter::GetHealthPercent() const
+float AMerc_PlayerCharacter::GetHealthPercent() const
 {
 	return CurrentHealth / MaxHealth;
 }
-

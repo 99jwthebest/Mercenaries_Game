@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "MyCharacter.generated.h"
+#include "Merc_PlayerCharacter.generated.h"
 
 class AMerc_Gun;
 class UCameraComponent;
@@ -14,7 +14,7 @@ class USpringArmComponent;
 struct FInputActionValue;
 
 UCLASS()
-class AMyCharacter : public ACharacter
+class AMerc_PlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -56,18 +56,15 @@ class AMyCharacter : public ACharacter
 
 public:
 	// Sets default values for this character's properties
-	AMyCharacter();
+	AMerc_PlayerCharacter();
 
 protected:
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
+public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-
 
 protected:
 
@@ -86,6 +83,7 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
 
 protected:
 
