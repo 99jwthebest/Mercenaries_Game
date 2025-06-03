@@ -32,13 +32,11 @@ void AMerc_Gun::PullTrigger()
 	if (MuzzleFlashEffect && MuzzleSound)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashEffect, MuzzleLocation->GetComponentTransform());
-	}
-	if (MuzzleSound)
-	{
 		UGameplayStatics::SpawnSoundAttached(MuzzleSound, Mesh, TEXT("RightHand"));
 		UE_LOG(LogTemp, Error, TEXT("You've Been Shot WITH SOUNDSSSSS!!"));
-
 	}
+	if (RecoilShake)
+		GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(RecoilShake);
 
 	FHitResult Hit;
 	FVector ShotDirection;
@@ -91,13 +89,101 @@ AController* AMerc_Gun::GetOwnerController() const
 	return OwnerPawn->GetController();
 }
 
+
+void AMerc_Gun::StartFiring()
+{
+	if (bIsReloading || CurrentAmmo <= 0 || bIsFiring)
+		return;
+
+	bIsFiring = true;
+
+	switch (FireMode)
+	{
+	case EFireMode::SemiAuto:
+		HandleFiring();
+		break;
+
+	case EFireMode::FullAuto:
+		HandleFiring();
+		GetWorld()->GetTimerManager().SetTimer(FireRateTimer, this, &AMerc_Gun::HandleFiring, FireRate, true);
+		break;
+
+	case EFireMode::Burst:
+		BurstShotsRemaining = BurstShotsPerCycle;
+		HandleBurstFiring(); // fire first shot
+		break;
+	}
+}
+
+void AMerc_Gun::HandleFiring()
+{
+	if (CurrentAmmo <= 0)
+	{
+		StopFiring();
+		// Optionally: auto-reload or play empty sound
+		return;
+	}
+
+	PullTrigger(); // Your existing fire logic
+
+	CurrentAmmo--;
+}
+
+void AMerc_Gun::HandleBurstFiring()
+{
+	HandleFiring(); // calls PullTrigger() in here
+	BurstShotsRemaining--;
+
+	if (BurstShotsRemaining <= 0 || CurrentAmmo <= 0)
+	{
+		// Done firing burst, start cooldown
+		GetWorld()->GetTimerManager().SetTimer(BurstCooldownTimer, this, &AMerc_Gun::ResetBurst, BurstCycleRate, false);
+		return;
+
+	}
+
+	GetWorld()->GetTimerManager().SetTimer(BurstShotTimer, this, &AMerc_Gun::HandleBurstFiring, BurstShotRate, false);
+}
+
+void AMerc_Gun::ResetBurst()
+{
+	bIsFiring = false;
+}
+
+void AMerc_Gun::StopFiring()
+{
+	bIsFiring = false;
+
+	GetWorld()->GetTimerManager().ClearTimer(FireRateTimer);
+	GetWorld()->GetTimerManager().ClearTimer(BurstShotTimer);
+	GetWorld()->GetTimerManager().ClearTimer(BurstCooldownTimer);
+	 // ****** Maybe this might help to stop bursting if something happens to player
+}
+
+void AMerc_Gun::StartReload()
+{
+	if (bIsReloading || CurrentAmmo == MaxAmmo)
+		return;
+
+	bIsReloading = true;
+
+	// Optional: play reload animation or sound here
+
+	GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, this, &AMerc_Gun::FinishReload, ReloadDuration, false);
+}
+
+void AMerc_Gun::FinishReload()
+{
+	bIsReloading = false;
+	CurrentAmmo = MaxAmmo;
+}
+
 // Called when the game starts or when spawned
 void AMerc_Gun::BeginPlay()
 {
 	Super::BeginPlay();
 
 }
-
 // Called every frame
 void AMerc_Gun::Tick(float DeltaTime)
 {
