@@ -51,9 +51,22 @@ class AMerc_PlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
 
+	/** Reload Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ReloadAction;
+	
 	/** Sprint Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SprintAction;
+
+	/** Scroll Up Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ScrollUpAction;
+
+	/** Scroll Down Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ScrollDownAction;
+
 
 public:
 	// Sets default values for this character's properties
@@ -89,10 +102,16 @@ public:
 protected:
 
 	void Shoot();
+	void StopShooting();
 	void AimStart();
 	void AimEnd();
+	void Reload();
 	void SprintStart();
 	void SprintEnd();
+	void ScrollUpWeapon();
+	void ScrollDownWeapon();
+	void InitWeapons();
+	void SwitchWeapon(int32 NewIndex);
 
 public:
 
@@ -133,5 +152,17 @@ private:
 	float WalkAimSpeed;
 
 	UCharacterStateComponent* CharacterStateComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	TArray<TSubclassOf<AMerc_Gun>> WeaponClasses;
+	UPROPERTY()
+	TArray<AMerc_Gun*> Weapons;
+	int32 CurrentWeaponIndex = 0;
+
+	// In header file
+	//UPROPERTY(EditDefaultsOnly, Category = UI)
+	//TSubclassOf<UMerc_PlayerHUDWidget> PlayerHUDClass;
+
+	//UPlayerHUDWidget* PlayerHUD;
 
 };

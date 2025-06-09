@@ -25,25 +25,35 @@ public:
 	// Sets default values for this actor's properties
 	AMerc_Gun();
 
-	virtual void PullTrigger();
-
 	bool GunTrace(FHitResult& Hit, FVector& ShotDirection);
 	AController* GetOwnerController() const;
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	EFireMode GetFireMode() const;
+	// Internal use only — not exposed to Blueprint
+	float GetBulletSpreadRadians() const;
 
 protected:
 
-	void StartFiring();
+	virtual void PullTrigger();
 	void HandleFiring();
 	void HandleBurstFiring();
+
+public:
+
+	void StartFiring();
 	void ResetBurst();
 	void StopFiring();
 	void StartReload();
 	void FinishReload();
+	void ResettingFullAutoFire();
+	void ApplyRecoil();
 	
+
+public:
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -81,8 +91,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	float FireRate = 0.1f;
 
-	FTimerHandle FireRateTimer;
+	FTimerHandle FullAutoFireRateTimer;
+	FTimerHandle FullAutoCooldownTimer;
 	bool bIsFiring = false;
+	bool bResettingFullAutoFire = false;
+	bool bCanFire = true;
+	bool bWantsToFire = false;
+
+	FTimerHandle SemiAutoFireRateTimer;
 
 	// Timers
 	FTimerHandle BurstShotTimer;
@@ -110,5 +126,26 @@ private:
 	float ReloadDuration = 2.0f;
 	bool bIsReloading = false;
 	FTimerHandle ReloadTimerHandle;
+
+	// This is the user-friendly version exposed to Blueprint
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon|Accuracy", meta = (ClampMin = "0.0", ClampMax = "90.0", UIMin = "0.0", UIMax = "10.0", AllowPrivateAccess = "true"))
+	float BulletSpreadDegrees = 2.5f;
+
+	// Recoil - Vertical
+	UPROPERTY(EditAnywhere, Category = "Weapon|Recoil")
+	float RecoilPitchMin = 1.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon|Recoil")
+	float RecoilPitchMax = 2.0f;
+
+	// Recoil - Horizontal
+	UPROPERTY(EditAnywhere, Category = "Weapon|Recoil")
+	float RecoilYawMax = 1.0f;
+
+	FRotator RecoilAccumulated;
+	// Recoil - Recovery
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Recoil", meta = (ClampMin = "0.0", ClampMax = "30.0", UIMin = "1.0", UIMax = "10.0", AllowPrivateAccess = "true"))
+	FRotator RecoilRecoverySpeed = FRotator(10.f, 5.f, 0.f); // degrees per second
+
 
 };

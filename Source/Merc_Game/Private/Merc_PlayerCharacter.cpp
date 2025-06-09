@@ -13,6 +13,8 @@
 #include "InputActionValue.h"
 #include "Actors/Merc_Gun.h"
 #include "Components/CharacterStateComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 
 
 // Sets default values
@@ -73,15 +75,15 @@ void AMerc_PlayerCharacter::BeginPlay()
 		}
 	}
 
-	Gun = GetWorld()->SpawnActor<AMerc_Gun>(GunClass);
-	Gun->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("WeaponSocket"));
-	Gun->SetOwner(this);
+	InitWeapons();
 
 	CurrentHealth = MaxHealth;
 
 	DefaultCameraArmLength = CameraBoom->TargetArmLength; // The camera follows at this distance behind the character	
 	DefaultCameraFOV = FollowCamera->FieldOfView;
 	DefaultWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+
+	
 }
 
 // Called every frame
@@ -109,18 +111,27 @@ void AMerc_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMerc_PlayerCharacter::Look);
 
 		// Shoot
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AMerc_PlayerCharacter::Shoot);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::Shoot);
+		// Shoot
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AMerc_PlayerCharacter::StopShooting);
 
 		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::AimStart);
 		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AMerc_PlayerCharacter::AimEnd);
 
+		// Reload
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AMerc_PlayerCharacter::Reload);
+
 		// Sprint
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::SprintStart);
 		// Sprint
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AMerc_PlayerCharacter::SprintEnd);
 
+		// Scroll Up
+		EnhancedInputComponent->BindAction(ScrollUpAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::ScrollUpWeapon);
+		// Scroll Down
+		EnhancedInputComponent->BindAction(ScrollDownAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::ScrollDownWeapon);
 	}
 	else
 	{
@@ -189,7 +200,13 @@ float AMerc_PlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& 
 
 void AMerc_PlayerCharacter::Shoot()
 {
-	Gun->PullTrigger();
+	Gun->StartFiring();
+}
+
+void AMerc_PlayerCharacter::StopShooting()
+{
+	if(Gun->GetFireMode() == EFireMode::FullAuto)
+		Gun->StopFiring();
 }
 
 void AMerc_PlayerCharacter::AimStart()
@@ -210,6 +227,11 @@ void AMerc_PlayerCharacter::AimEnd()
 	CameraBoom->TargetArmLength = DefaultCameraArmLength;
 	FollowCamera->FieldOfView = DefaultCameraFOV;
 	CharacterStateComp->SetState(ECharacterStates::None);
+}
+
+void AMerc_PlayerCharacter::Reload()
+{
+	Gun->StartReload();
 }
 
 void AMerc_PlayerCharacter::SprintStart()
@@ -238,6 +260,68 @@ void AMerc_PlayerCharacter::SprintEnd()
 
 }
 
+void AMerc_PlayerCharacter::ScrollUpWeapon()
+{
+	int32 NewIndex = (CurrentWeaponIndex + 1) % Weapons.Num();
+	UE_LOG(LogTemp, Log, TEXT("ScrollUpWeapon: Attempting to switch to Index %d"), NewIndex);
+	SwitchWeapon(NewIndex);
+}
+
+void AMerc_PlayerCharacter::ScrollDownWeapon()
+{
+	int32 NewIndex = (CurrentWeaponIndex - 1 + Weapons.Num()) % Weapons.Num();
+	UE_LOG(LogTemp, Log, TEXT("ScrollDownWeapon: Attempting to switch to Index %d"), NewIndex);
+	SwitchWeapon(NewIndex);
+}
+
+void AMerc_PlayerCharacter::InitWeapons()
+{
+	for (TSubclassOf<AMerc_Gun> WeaponClass : WeaponClasses)
+	{
+		if (WeaponClass)
+		{
+			AMerc_Gun* NewGun = GetWorld()->SpawnActor<AMerc_Gun>(WeaponClass);
+			NewGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
+			NewGun->SetOwner(this);
+			NewGun->SetActorHiddenInGame(true); // Hide all but the current one
+			Weapons.Add(NewGun);
+		}
+	}
+
+	// Show only first weapon
+	if (Weapons.IsValidIndex(0))
+	{
+		Weapons[0]->SetActorHiddenInGame(false);
+		CurrentWeaponIndex = 0;
+		Gun = Weapons[0]; // Set the active Gun reference here
+	}
+}
+
+void AMerc_PlayerCharacter::SwitchWeapon(int32 NewIndex)
+{
+	if (NewIndex == CurrentWeaponIndex || !Weapons.IsValidIndex(NewIndex))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SwitchWeapon: Ignored - Invalid index or same weapon. NewIndex: %d, Current: %d"), NewIndex, CurrentWeaponIndex);
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Switching Weapon: From Index %d to Index %d"), CurrentWeaponIndex, NewIndex);
+
+	Weapons[CurrentWeaponIndex]->SetActorHiddenInGame(true);
+	CurrentWeaponIndex = NewIndex;
+	Weapons[CurrentWeaponIndex]->SetActorHiddenInGame(false);
+	Gun = Weapons[CurrentWeaponIndex];
+
+	if (Gun)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Current Weapon: %s"), *Gun->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("SwitchWeapon: Gun pointer is NULL after switching!"));
+	}
+}
+
 
 bool AMerc_PlayerCharacter::IsDead() const
 {
@@ -246,7 +330,7 @@ bool AMerc_PlayerCharacter::IsDead() const
 
 void AMerc_PlayerCharacter::AI_Shoot()
 {
-	Gun->PullTrigger();
+	Gun->StartFiring();
 
 }
 

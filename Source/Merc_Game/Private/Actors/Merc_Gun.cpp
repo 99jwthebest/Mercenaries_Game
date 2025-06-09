@@ -72,13 +72,19 @@ bool AMerc_Gun::GunTrace(FHitResult& Hit, FVector& ShotDirection)
 	FVector Location;
 	FRotator Rotation;
 	OwnerController->GetPlayerViewPoint(Location, Rotation);
-	ShotDirection = -Rotation.Vector();
 
-	FVector End = Location + Rotation.Vector() * MaxRange;
+	// Add bullet spread
+	const FVector ShootDir = Rotation.Vector();
+	const float SpreadRad = GetBulletSpreadRadians();
+	ShotDirection = FMath::VRandCone(ShootDir, SpreadRad); // apply spread
+
+	const FVector End = Location + ShotDirection * MaxRange;
+
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 	Params.AddIgnoredActor(GetOwner());
-	return GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECollisionChannel::ECC_GameTraceChannel1, Params);
+
+	return GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECC_GameTraceChannel1, Params);
 }
 
 AController* AMerc_Gun::GetOwnerController() const
@@ -89,29 +95,56 @@ AController* AMerc_Gun::GetOwnerController() const
 	return OwnerPawn->GetController();
 }
 
+EFireMode AMerc_Gun::GetFireMode() const
+{
+	return FireMode;
+}
+
+float AMerc_Gun::GetBulletSpreadRadians() const
+{
+	return FMath::DegreesToRadians(BulletSpreadDegrees);
+}
+
 
 void AMerc_Gun::StartFiring()
 {
 	if (bIsReloading || CurrentAmmo <= 0 || bIsFiring)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Cannot fire: Reloading (%d), Ammo = %d, Already firing = %d"), bIsReloading, CurrentAmmo, bIsFiring);
 		return;
+	}
+
+	if (!bCanFire)
+	{
+		// Player tried to fire during cooldown — buffer it
+		bWantsToFire = true;
+		return;
+	}
 
 	bIsFiring = true;
+	UE_LOG(LogTemp, Log, TEXT("StartFiring: FireMode = %d"), static_cast<int32>(FireMode));
 
 	switch (FireMode)
 	{
-	case EFireMode::SemiAuto:
-		HandleFiring();
-		break;
+		case EFireMode::SemiAuto:
+			HandleFiring();
+			// Add cooldown before next shot is allowed
+			GetWorld()->GetTimerManager().SetTimer(SemiAutoFireRateTimer, this, &AMerc_Gun::ResetBurst, FireRate, false);
+			break;
 
-	case EFireMode::FullAuto:
-		HandleFiring();
-		GetWorld()->GetTimerManager().SetTimer(FireRateTimer, this, &AMerc_Gun::HandleFiring, FireRate, true);
-		break;
+		case EFireMode::FullAuto:
+			HandleFiring();
+			bCanFire = false;
+			GetWorld()->GetTimerManager().SetTimer(FullAutoCooldownTimer, this, &AMerc_Gun::ResettingFullAutoFire, FireRate, false);
+			GetWorld()->GetTimerManager().SetTimer(FullAutoFireRateTimer, this, &AMerc_Gun::HandleFiring, FireRate, true);
+			UE_LOG(LogTemp, Log, TEXT("FullAuto: Timer set with FireRate = %f"), FireRate);
+			break;
 
-	case EFireMode::Burst:
-		BurstShotsRemaining = BurstShotsPerCycle;
-		HandleBurstFiring(); // fire first shot
-		break;
+		case EFireMode::Burst:
+			BurstShotsRemaining = BurstShotsPerCycle;
+			UE_LOG(LogTemp, Log, TEXT("Burst: Starting burst with %d shots"), BurstShotsRemaining);
+			HandleBurstFiring();
+			break;
 	}
 }
 
@@ -119,55 +152,63 @@ void AMerc_Gun::HandleFiring()
 {
 	if (CurrentAmmo <= 0)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("No ammo left!"));
 		StopFiring();
-		// Optionally: auto-reload or play empty sound
 		return;
 	}
 
-	PullTrigger(); // Your existing fire logic
-
+	UE_LOG(LogTemp, Log, TEXT("Firing! Current Ammo = %d"), CurrentAmmo);
+	PullTrigger();
 	CurrentAmmo--;
+	UE_LOG(LogTemp, Log, TEXT("Ammo after shot = %d"), CurrentAmmo);
+	ApplyRecoil();
 }
 
 void AMerc_Gun::HandleBurstFiring()
 {
-	HandleFiring(); // calls PullTrigger() in here
+	HandleFiring();
 	BurstShotsRemaining--;
+	UE_LOG(LogTemp, Log, TEXT("BurstFiring: Shots remaining = %d"), BurstShotsRemaining);
 
 	if (BurstShotsRemaining <= 0 || CurrentAmmo <= 0)
 	{
-		// Done firing burst, start cooldown
+		UE_LOG(LogTemp, Log, TEXT("BurstFiring complete. Starting cooldown for %f seconds."), BurstCycleRate);
 		GetWorld()->GetTimerManager().SetTimer(BurstCooldownTimer, this, &AMerc_Gun::ResetBurst, BurstCycleRate, false);
 		return;
-
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(BurstShotTimer, this, &AMerc_Gun::HandleBurstFiring, BurstShotRate, false);
+	UE_LOG(LogTemp, Log, TEXT("Next burst shot in %f seconds."), BurstShotRate);
 }
 
 void AMerc_Gun::ResetBurst()
 {
 	bIsFiring = false;
+	UE_LOG(LogTemp, Log, TEXT("Burst reset complete. Gun ready."));
 }
 
 void AMerc_Gun::StopFiring()
 {
 	bIsFiring = false;
 
-	GetWorld()->GetTimerManager().ClearTimer(FireRateTimer);
+	GetWorld()->GetTimerManager().ClearTimer(FullAutoFireRateTimer);
 	GetWorld()->GetTimerManager().ClearTimer(BurstShotTimer);
 	GetWorld()->GetTimerManager().ClearTimer(BurstCooldownTimer);
 	 // ****** Maybe this might help to stop bursting if something happens to player
+
+	UE_LOG(LogTemp, Log, TEXT("Stopped firing. Timers cleared."));
 }
 
 void AMerc_Gun::StartReload()
 {
 	if (bIsReloading || CurrentAmmo == MaxAmmo)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Reload skipped. Already reloading or full ammo."));
 		return;
+	}
 
 	bIsReloading = true;
-
-	// Optional: play reload animation or sound here
+	UE_LOG(LogTemp, Log, TEXT("Reloading started..."));
 
 	GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, this, &AMerc_Gun::FinishReload, ReloadDuration, false);
 }
@@ -176,6 +217,36 @@ void AMerc_Gun::FinishReload()
 {
 	bIsReloading = false;
 	CurrentAmmo = MaxAmmo;
+	UE_LOG(LogTemp, Log, TEXT("Reload complete. Ammo = %d"), CurrentAmmo);
+}
+
+void AMerc_Gun::ResettingFullAutoFire()
+{
+	bCanFire = true;
+
+	// If the player tapped during cooldown, fire immediately
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		StartFiring();  // Will immediately consume input and start again
+		UE_LOG(LogTemp, Log, TEXT("Fire cooldown reset. Can fire again."));
+	}
+}
+
+void AMerc_Gun::ApplyRecoil()
+{
+	APlayerController* PC = Cast<APlayerController>(GetOwnerController());
+	if (PC)
+	{
+		float PitchRecoil = FMath::RandRange(RecoilPitchMin, RecoilPitchMax); // e.g., 1.0f to 2.0f
+		float YawRecoil = FMath::RandRange(-RecoilYawMax, RecoilYawMax);      // e.g., -1.0f to 1.0f
+
+		RecoilAccumulated += FRotator(PitchRecoil, YawRecoil, 0.f); // accumulate upward and sideways
+
+		FRotator NewRotation = PC->GetControlRotation();
+		NewRotation += FRotator(PitchRecoil, YawRecoil, 0.f);
+		PC->SetControlRotation(NewRotation);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -183,11 +254,39 @@ void AMerc_Gun::BeginPlay()
 {
 	Super::BeginPlay();
 
+	CurrentAmmo = MaxAmmo;
+
+
 }
 // Called every frame
 void AMerc_Gun::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	APlayerController* PC = Cast<APlayerController>(GetOwnerController());
+	if (PC && !RecoilAccumulated.IsNearlyZero())
+	{
+		FRotator CurrentRot = PC->GetControlRotation();
+		FRotator RecoveryStep = RecoilRecoverySpeed * DeltaTime;
+
+		// Recover pitch
+		if (RecoilAccumulated.Pitch > 0.f)
+		{
+			float Delta = FMath::Min(RecoilAccumulated.Pitch, RecoveryStep.Pitch);
+			RecoilAccumulated.Pitch -= Delta;
+			CurrentRot.Pitch -= Delta;
+		}
+
+		// Recover yaw
+		if (FMath::Abs(RecoilAccumulated.Yaw) > 0.f)
+		{
+			float Delta = FMath::Min(FMath::Abs(RecoilAccumulated.Yaw), RecoveryStep.Yaw);
+			float Sign = FMath::Sign(RecoilAccumulated.Yaw);
+			RecoilAccumulated.Yaw -= Delta * Sign;
+			CurrentRot.Yaw -= Delta * Sign;
+		}
+
+		PC->SetControlRotation(CurrentRot);
+	}
 }
 
