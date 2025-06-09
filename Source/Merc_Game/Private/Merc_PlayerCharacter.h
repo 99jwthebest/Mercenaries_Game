@@ -11,6 +11,7 @@ class UCameraComponent;
 class UCharacterStateComponent;
 class UInputMappingContext;
 class UInputAction;
+class UMerc_PlayerHUDWidget;
 class USpringArmComponent;
 struct FInputActionValue;
 
@@ -125,6 +126,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	float GetHealthPercent() const;
 
+	UFUNCTION()
+	void OnAmmoChanged(int32 CurrentAmmo, int32 MaxAmmo);
+
 private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
@@ -159,10 +163,9 @@ private:
 	TArray<AMerc_Gun*> Weapons;
 	int32 CurrentWeaponIndex = 0;
 
-	// In header file
-	//UPROPERTY(EditDefaultsOnly, Category = UI)
-	//TSubclassOf<UMerc_PlayerHUDWidget> PlayerHUDClass;
+	UPROPERTY(EditDefaultsOnly, Category = UI)
+	TSubclassOf<UMerc_PlayerHUDWidget> PlayerHUDClass;
 
-	//UPlayerHUDWidget* PlayerHUD;
+	UMerc_PlayerHUDWidget* PlayerHUD;
 
 };

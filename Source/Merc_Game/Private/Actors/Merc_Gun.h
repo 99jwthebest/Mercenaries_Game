@@ -15,6 +15,9 @@ enum class EFireMode : uint8
 	Bolt
 };
 
+// Delegate signature: int32 CurrentAmmo, int32 MaxAmmo
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChanged, int32, CurrentAmmo, int32, MaxAmmo);
+
 
 UCLASS()
 class AMerc_Gun : public AActor
@@ -45,9 +48,13 @@ public:
 	void StopFiring();
 	void StartReload();
 	void FinishReload();
+	void CancelReload();
 	void ResettingFullAutoFire();
 	void ApplyRecoil();
-	
+	int GetCurrentAmmo();
+	int GetMaxAmmo();
+
+
 
 public:
 
@@ -56,6 +63,14 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+public:
+	// Delegate to notify ammo changes
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnAmmoChanged OnAmmoChanged;
+
+	// Call this whenever ammo is changed
+	void NotifyAmmoChanged();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Weapon)

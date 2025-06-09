@@ -162,6 +162,7 @@ void AMerc_Gun::HandleFiring()
 	CurrentAmmo--;
 	UE_LOG(LogTemp, Log, TEXT("Ammo after shot = %d"), CurrentAmmo);
 	ApplyRecoil();
+	NotifyAmmoChanged();
 }
 
 void AMerc_Gun::HandleBurstFiring()
@@ -218,6 +219,17 @@ void AMerc_Gun::FinishReload()
 	bIsReloading = false;
 	CurrentAmmo = MaxAmmo;
 	UE_LOG(LogTemp, Log, TEXT("Reload complete. Ammo = %d"), CurrentAmmo);
+	NotifyAmmoChanged();
+}
+
+void AMerc_Gun::CancelReload()
+{
+	if (bIsReloading)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+		bIsReloading = false;
+		UE_LOG(LogTemp, Warning, TEXT("Reload cancelled!"));
+	}
 }
 
 void AMerc_Gun::ResettingFullAutoFire()
@@ -247,6 +259,16 @@ void AMerc_Gun::ApplyRecoil()
 		NewRotation += FRotator(PitchRecoil, YawRecoil, 0.f);
 		PC->SetControlRotation(NewRotation);
 	}
+}
+
+int AMerc_Gun::GetCurrentAmmo()
+{
+	return CurrentAmmo;
+}
+
+int AMerc_Gun::GetMaxAmmo()
+{
+	return MaxAmmo;
 }
 
 // Called when the game starts or when spawned
@@ -288,5 +310,10 @@ void AMerc_Gun::Tick(float DeltaTime)
 
 		PC->SetControlRotation(CurrentRot);
 	}
+}
+
+void AMerc_Gun::NotifyAmmoChanged()
+{
+	OnAmmoChanged.Broadcast(CurrentAmmo, MaxAmmo);
 }
 

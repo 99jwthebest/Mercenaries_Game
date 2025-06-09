@@ -15,6 +15,8 @@
 #include "Components/CharacterStateComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
+#include "UI/Merc_PlayerHUDWidget.h"
+
 
 
 // Sets default values
@@ -83,7 +85,18 @@ void AMerc_PlayerCharacter::BeginPlay()
 	DefaultCameraFOV = FollowCamera->FieldOfView;
 	DefaultWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 
-	
+	// In BeginPlay
+	if (PlayerHUDClass)
+	{
+		PlayerHUD = CreateWidget<UMerc_PlayerHUDWidget>(GetWorld(), PlayerHUDClass);
+		if (PlayerHUD)
+		{
+			PlayerHUD->AddToViewport();
+			PlayerHUD->UpdateAmmo(Gun->GetCurrentAmmo(), Gun->GetMaxAmmo());
+			//PlayerHUD->UpdateHealth(CurrentHealth, MaxHealth);
+			//PlayerHUD->UpdateGrenades(CurrentGrenades); // optional
+		}
+	}
 }
 
 // Called every frame
@@ -294,6 +307,9 @@ void AMerc_PlayerCharacter::InitWeapons()
 		Weapons[0]->SetActorHiddenInGame(false);
 		CurrentWeaponIndex = 0;
 		Gun = Weapons[0]; // Set the active Gun reference here
+
+		if(Gun)
+			Gun->OnAmmoChanged.AddDynamic(this, &AMerc_PlayerCharacter::OnAmmoChanged);
 	}
 }
 
@@ -303,6 +319,12 @@ void AMerc_PlayerCharacter::SwitchWeapon(int32 NewIndex)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SwitchWeapon: Ignored - Invalid index or same weapon. NewIndex: %d, Current: %d"), NewIndex, CurrentWeaponIndex);
 		return;
+	}
+
+	if (Gun)
+	{
+		Gun->OnAmmoChanged.RemoveDynamic(this, &AMerc_PlayerCharacter::OnAmmoChanged);
+		Gun->CancelReload();
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Switching Weapon: From Index %d to Index %d"), CurrentWeaponIndex, NewIndex);
@@ -315,6 +337,10 @@ void AMerc_PlayerCharacter::SwitchWeapon(int32 NewIndex)
 	if (Gun)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Current Weapon: %s"), *Gun->GetName());
+		Gun->OnAmmoChanged.AddDynamic(this, &AMerc_PlayerCharacter::OnAmmoChanged);
+
+		// Update HUD immediately on switch
+		OnAmmoChanged(Gun->GetCurrentAmmo(), Gun->GetMaxAmmo());
 	}
 	else
 	{
@@ -337,4 +363,10 @@ void AMerc_PlayerCharacter::AI_Shoot()
 float AMerc_PlayerCharacter::GetHealthPercent() const
 {
 	return CurrentHealth / MaxHealth;
+}
+
+void AMerc_PlayerCharacter::OnAmmoChanged(int32 CurrentAmmo, int32 MaxAmmo)
+{
+	if (PlayerHUD)
+		PlayerHUD->UpdateAmmo(CurrentAmmo, MaxAmmo);
 }
