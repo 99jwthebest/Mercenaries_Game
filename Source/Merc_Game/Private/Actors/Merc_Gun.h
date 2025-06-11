@@ -53,6 +53,7 @@ public:
 	void ApplyRecoil();
 	int GetCurrentAmmo();
 	int GetMaxAmmo();
+	UTexture2D* GetGunIcon();
 
 
 
@@ -162,5 +163,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Recoil", meta = (ClampMin = "0.0", ClampMax = "30.0", UIMin = "1.0", UIMax = "10.0", AllowPrivateAccess = "true"))
 	FRotator RecoilRecoverySpeed = FRotator(10.f, 5.f, 0.f); // degrees per second
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* GunIcon;
 
 };

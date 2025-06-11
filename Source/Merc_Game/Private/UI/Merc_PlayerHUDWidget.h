@@ -7,6 +7,7 @@
 #include "Merc_PlayerHUDWidget.generated.h"
 
 class UTextBlock;
+class UImage;
 
 UCLASS()
 class UMerc_PlayerHUDWidget : public UUserWidget
@@ -27,6 +28,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateGrenades(int32 Count);
 
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponIcon(UTexture2D* NewIcon);
+
 protected:
 
 	UPROPERTY(meta = (BindWidget))
@@ -37,5 +41,8 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GrenadeText;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* WeaponIcon;
 
 };

@@ -271,6 +271,11 @@ int AMerc_Gun::GetMaxAmmo()
 	return MaxAmmo;
 }
 
+UTexture2D* AMerc_Gun::GetGunIcon()
+{
+	return GunIcon;
+}
+
 // Called when the game starts or when spawned
 void AMerc_Gun::BeginPlay()
 {

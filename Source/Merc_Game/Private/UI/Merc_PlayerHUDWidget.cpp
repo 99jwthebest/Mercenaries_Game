@@ -3,6 +3,7 @@
 
 #include "UI/Merc_PlayerHUDWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 
 void UMerc_PlayerHUDWidget::NativeConstruct()
 {
@@ -34,5 +35,13 @@ void UMerc_PlayerHUDWidget::UpdateGrenades(int32 Count)
 	if (GrenadeText)
 	{
 		GrenadeText->SetText(FText::FromString(FString::Printf(TEXT("Grenades: %d"), Count)));
+	}
+}
+
+void UMerc_PlayerHUDWidget::SetWeaponIcon(UTexture2D* NewIcon)
+{
+	if (WeaponIcon)
+	{
+		WeaponIcon->SetBrushFromTexture(NewIcon);
 	}
 }

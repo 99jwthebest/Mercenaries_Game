@@ -93,10 +93,12 @@ void AMerc_PlayerCharacter::BeginPlay()
 		{
 			PlayerHUD->AddToViewport();
 			PlayerHUD->UpdateAmmo(Gun->GetCurrentAmmo(), Gun->GetMaxAmmo());
+			PlayerHUD->SetWeaponIcon(Gun->GetGunIcon());
 			//PlayerHUD->UpdateHealth(CurrentHealth, MaxHealth);
 			//PlayerHUD->UpdateGrenades(CurrentGrenades); // optional
 		}
 	}
+
 }
 
 // Called every frame
@@ -341,6 +343,9 @@ void AMerc_PlayerCharacter::SwitchWeapon(int32 NewIndex)
 
 		// Update HUD immediately on switch
 		OnAmmoChanged(Gun->GetCurrentAmmo(), Gun->GetMaxAmmo());
+
+		if (PlayerHUD)
+			PlayerHUD->SetWeaponIcon(Gun->GetGunIcon());
 	}
 	else
 	{
