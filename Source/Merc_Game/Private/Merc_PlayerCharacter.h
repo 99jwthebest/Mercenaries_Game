@@ -7,6 +7,7 @@
 #include "Merc_PlayerCharacter.generated.h"
 
 class AMerc_Gun;
+class AMerc_WeaponDisplay;
 class UCameraComponent;
 class UCharacterStateComponent;
 class UInputMappingContext;
@@ -167,5 +168,7 @@ private:
 	TSubclassOf<UMerc_PlayerHUDWidget> PlayerHUDClass;
 
 	UMerc_PlayerHUDWidget* PlayerHUD;
+	UPROPERTY()
+	AMerc_WeaponDisplay* FocusedWeaponDisplay;
 
 };
