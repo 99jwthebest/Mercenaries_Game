@@ -16,7 +16,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "UI/Merc_PlayerHUDWidget.h"
-
+#include "UI/Merc_WeaponBuyPromptWidget.h"
+#include "Actors/Merc_WeaponDisplay.h"
 
 
 // Sets default values
@@ -96,6 +97,17 @@ void AMerc_PlayerCharacter::BeginPlay()
 			PlayerHUD->SetWeaponIcon(Gun->GetGunIcon());
 			//PlayerHUD->UpdateHealth(CurrentHealth, MaxHealth);
 			//PlayerHUD->UpdateGrenades(CurrentGrenades); // optional
+			PlayerHUD->UpdatePoints(GetPoints());
+		}
+	}
+
+	if (WeaponBuyPromptWidgetClass)
+	{
+		WeaponBuyPromptWidget = CreateWidget<UMerc_WeaponBuyPromptWidget>(GetWorld(), WeaponBuyPromptWidgetClass);
+		if (WeaponBuyPromptWidget)
+		{
+			WeaponBuyPromptWidget->AddToViewport();
+			WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 
@@ -147,6 +159,9 @@ void AMerc_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(ScrollUpAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::ScrollUpWeapon);
 		// Scroll Down
 		EnhancedInputComponent->BindAction(ScrollDownAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::ScrollDownWeapon);
+		
+		// Interact
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::TryBuyNearbyWeapon);
 	}
 	else
 	{
@@ -350,6 +365,83 @@ void AMerc_PlayerCharacter::SwitchWeapon(int32 NewIndex)
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("SwitchWeapon: Gun pointer is NULL after switching!"));
+	}
+}
+
+void AMerc_PlayerCharacter::TryBuyNearbyWeapon()
+{
+	if (NearbyWeaponBuy && NearbyWeaponBuy->TryPurchase(this))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Purchased weapon: %s"), *NearbyWeaponBuy->GetName());
+		HideWeaponBuyPrompt();
+		SetNearbyWeaponBuy(nullptr);
+	}
+}
+
+void AMerc_PlayerCharacter::ShowWeaponBuyPrompt(FString WeaponName, int32 Cost)
+{
+	if (WeaponBuyPromptWidget)
+	{
+		const FString Prompt = FString::Printf(TEXT("[E] Buy %s Costs: %d Points"), *WeaponName, Cost);
+
+		// Optional cast if using UWeaponBuyPromptWidget with SetPromptText()
+		if (UMerc_WeaponBuyPromptWidget* PromptWidget = Cast<UMerc_WeaponBuyPromptWidget>(WeaponBuyPromptWidget))
+		{
+			PromptWidget->SetPromptText(Prompt);
+		}
+
+		WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Visible);
+	}
+}
+
+void AMerc_PlayerCharacter::HideWeaponBuyPrompt()
+{
+	if (WeaponBuyPromptWidget)
+	{
+		WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
+void AMerc_PlayerCharacter::SetNearbyWeaponBuy(AMerc_WeaponDisplay* NewWeapon)
+{
+	NearbyWeaponBuy = NewWeapon;
+}
+
+void AMerc_PlayerCharacter::AddPoints(int32 Amount)
+{
+	CurrentPoints = FMath::Clamp(CurrentPoints + Amount, 0, INT32_MAX);
+	UE_LOG(LogTemp, Log, TEXT("Points updated: %d"), CurrentPoints);
+
+	// Optional: Notify UI
+	if (PlayerHUD)
+	{
+		PlayerHUD->UpdatePoints(CurrentPoints);
+	}
+}
+
+int32 AMerc_PlayerCharacter::GetPoints() const
+{
+	return CurrentPoints;
+}
+
+void AMerc_PlayerCharacter::AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass)
+{
+	AMerc_Gun* NewGun = GetWorld()->SpawnActor<AMerc_Gun>(NewGunClass);
+	if (!NewGun) return;
+
+	NewGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
+	NewGun->SetOwner(this);
+	NewGun->SetActorHiddenInGame(true);
+
+	Weapons.Add(NewGun);
+
+	if (Weapons.Num() == 1) // If first weapon, auto-equip
+	{
+		CurrentWeaponIndex = 0;
+		NewGun->SetActorHiddenInGame(false);
+		Gun = NewGun;
+		Gun->OnAmmoChanged.AddDynamic(this, &AMerc_PlayerCharacter::OnAmmoChanged);
+		OnAmmoChanged(Gun->GetCurrentAmmo(), Gun->GetMaxAmmo());
 	}
 }
 

@@ -31,6 +31,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponIcon(UTexture2D* NewIcon);
 
+	UFUNCTION(BlueprintCallable)
+	void UpdatePoints(int32 Count);
+
 protected:
 
 	UPROPERTY(meta = (BindWidget))
@@ -44,5 +47,8 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* WeaponIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* PlayerPointsText;
 
 };

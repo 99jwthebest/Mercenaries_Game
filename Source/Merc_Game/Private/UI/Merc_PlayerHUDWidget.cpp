@@ -45,3 +45,11 @@ void UMerc_PlayerHUDWidget::SetWeaponIcon(UTexture2D* NewIcon)
 		WeaponIcon->SetBrushFromTexture(NewIcon);
 	}
 }
+
+void UMerc_PlayerHUDWidget::UpdatePoints(int32 Count)
+{
+	if (PlayerPointsText)
+	{
+		PlayerPointsText->SetText(FText::FromString(FString::Printf(TEXT("Points: %d"), Count)));
+	}
+}

@@ -13,6 +13,7 @@ class UCharacterStateComponent;
 class UInputMappingContext;
 class UInputAction;
 class UMerc_PlayerHUDWidget;
+class UMerc_WeaponBuyPromptWidget;
 class USpringArmComponent;
 struct FInputActionValue;
 
@@ -69,6 +70,9 @@ class AMerc_PlayerCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ScrollDownAction;
 
+	/** Interact Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* InteractAction;
 
 public:
 	// Sets default values for this character's properties
@@ -114,6 +118,7 @@ protected:
 	void ScrollDownWeapon();
 	void InitWeapons();
 	void SwitchWeapon(int32 NewIndex);
+	void TryBuyNearbyWeapon();
 
 public:
 
@@ -129,6 +134,19 @@ public:
 
 	UFUNCTION()
 	void OnAmmoChanged(int32 CurrentAmmo, int32 MaxAmmo);
+
+	void ShowWeaponBuyPrompt(FString WeaponName, int32 Cost);
+	void HideWeaponBuyPrompt();
+
+	void SetNearbyWeaponBuy(AMerc_WeaponDisplay* NewWeapon);
+	FORCEINLINE AMerc_WeaponDisplay* GetNearbyWeapon() const { return NearbyWeaponBuy; }
+	FORCEINLINE bool CanAfford(int32 Cost) const { return CurrentPoints >= Cost; }
+	void AddPoints(int32 Amount);
+	int32 GetPoints() const;
+	//bool CanAfford(int32 Cost) const;
+	
+	void AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass);
+
 
 private:
 
@@ -169,6 +187,14 @@ private:
 
 	UMerc_PlayerHUDWidget* PlayerHUD;
 	UPROPERTY()
-	AMerc_WeaponDisplay* FocusedWeaponDisplay;
+	AMerc_WeaponDisplay* NearbyWeaponBuy;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UMerc_WeaponBuyPromptWidget> WeaponBuyPromptWidgetClass;
+
+	UPROPERTY()
+	UMerc_WeaponBuyPromptWidget* WeaponBuyPromptWidget;
+
+	UPROPERTY(EditAnywhere, Category = "Points")
+	int32 CurrentPoints = 1000; // Starting points, change as needed
 
 };
