@@ -30,6 +30,8 @@ public:
 	// Called by player when they try to buy this weapon
 	bool TryPurchase(class AMerc_PlayerCharacter* Player);
 
+	void ClearBuyerIfNoLongerOwned(AMerc_PlayerCharacter* Player);
+
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -56,10 +58,18 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	UTexture2D* WeaponIcon; // Optional: for HUD or interaction prompt
 
+	UPROPERTY(EditAnywhere, Category = "Weapon")
+	int32 AmmoCost = 200;
+
 	bool bPlayerInRange = false;
 
+	TWeakObjectPtr<AMerc_PlayerCharacter> LastBuyer;
+
 public:
+	FORCEINLINE TSubclassOf<AMerc_Gun> GetWeaponClass() const { return WeaponClass; }
 	FORCEINLINE FName GetWeaponName() const { return WeaponName; }
 	FORCEINLINE int32 GetWeaponCost() const { return WeaponCost; }
 	FORCEINLINE UTexture2D* GetWeaponIcon() const { return WeaponIcon; }
+	FORCEINLINE int32 GetWeaponAmmoCost() const { return AmmoCost; }
+
 };

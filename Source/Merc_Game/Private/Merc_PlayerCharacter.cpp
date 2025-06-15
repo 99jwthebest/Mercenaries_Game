@@ -373,18 +373,37 @@ void AMerc_PlayerCharacter::TryBuyNearbyWeapon()
 	if (NearbyWeaponBuy && NearbyWeaponBuy->TryPurchase(this))
 	{
 		UE_LOG(LogTemp, Log, TEXT("Purchased weapon: %s"), *NearbyWeaponBuy->GetName());
-		HideWeaponBuyPrompt();
-		SetNearbyWeaponBuy(nullptr);
+
+		// Always show updated prompt after purchase (e.g., refill prompt)
+		const bool bAlreadyOwnsWeapon = HasWeapon(NearbyWeaponBuy->GetWeaponClass());
+		if (bAlreadyOwnsWeapon)
+		{
+			ShowWeaponBuyPrompt(NearbyWeaponBuy->GetWeaponName().ToString(), NearbyWeaponBuy->GetWeaponAmmoCost(), true);
+		}
+		else
+		{
+			ShowWeaponBuyPrompt(NearbyWeaponBuy->GetWeaponName().ToString(), NearbyWeaponBuy->GetWeaponCost(), false);
+		}
+
+		// Don't clear NearbyWeaponBuy — player is still in range!
 	}
 }
 
-void AMerc_PlayerCharacter::ShowWeaponBuyPrompt(FString WeaponName, int32 Cost)
+void AMerc_PlayerCharacter::ShowWeaponBuyPrompt(FString WeaponName, int32 Cost, bool bIsRefill)
 {
 	if (WeaponBuyPromptWidget)
 	{
-		const FString Prompt = FString::Printf(TEXT("[E] Buy %s Costs: %d Points"), *WeaponName, Cost);
+		FString Prompt;
 
-		// Optional cast if using UWeaponBuyPromptWidget with SetPromptText()
+		if (bIsRefill)
+		{
+			Prompt = FString::Printf(TEXT("[E] Refill %s Ammo - %d Points"), *WeaponName, Cost);
+		}
+		else
+		{
+			Prompt = FString::Printf(TEXT("[E] Buy %s - %d Points"), *WeaponName, Cost);
+		}
+
 		if (UMerc_WeaponBuyPromptWidget* PromptWidget = Cast<UMerc_WeaponBuyPromptWidget>(WeaponBuyPromptWidget))
 		{
 			PromptWidget->SetPromptText(Prompt);
@@ -424,10 +443,14 @@ int32 AMerc_PlayerCharacter::GetPoints() const
 	return CurrentPoints;
 }
 
-void AMerc_PlayerCharacter::AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass)
+void AMerc_PlayerCharacter::AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass, bool bEquipImmediately)
 {
+	if (!NewGunClass) 
+		return;
+
 	AMerc_Gun* NewGun = GetWorld()->SpawnActor<AMerc_Gun>(NewGunClass);
-	if (!NewGun) return;
+	if (!NewGun) 
+		return;
 
 	NewGun->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
 	NewGun->SetOwner(this);
@@ -435,13 +458,54 @@ void AMerc_PlayerCharacter::AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunCl
 
 	Weapons.Add(NewGun);
 
-	if (Weapons.Num() == 1) // If first weapon, auto-equip
+	if (bEquipImmediately || Weapons.Num() == 1)
 	{
-		CurrentWeaponIndex = 0;
-		NewGun->SetActorHiddenInGame(false);
+		if (Gun)
+			Gun->OnAmmoChanged.RemoveDynamic(this, &AMerc_PlayerCharacter::OnAmmoChanged);
+
+		CurrentWeaponIndex = Weapons.Num() - 1;
 		Gun = NewGun;
+		Gun->SetActorHiddenInGame(false);
 		Gun->OnAmmoChanged.AddDynamic(this, &AMerc_PlayerCharacter::OnAmmoChanged);
 		OnAmmoChanged(Gun->GetCurrentAmmo(), Gun->GetMaxAmmo());
+		if (PlayerHUD)
+			PlayerHUD->SetWeaponIcon(Gun->GetGunIcon());
+	}
+}
+
+bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const
+{
+	for (AMerc_Gun* GunIn : Weapons)
+	{
+		if (GunIn && GunIn->IsA(WeaponClass))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+AMerc_Gun* AMerc_PlayerCharacter::GetWeaponByClass(TSubclassOf<AMerc_Gun> WeaponClass) const
+{
+	for (AMerc_Gun* Weapon : Weapons)
+	{
+		if (Weapon && Weapon->IsA(WeaponClass))
+		{
+			return Weapon;
+		}
+	}
+	return nullptr;
+}
+
+void AMerc_PlayerCharacter::RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass)
+{
+	for (AMerc_Gun* GunIn : Weapons)
+	{
+		if (GunIn && GunIn->IsA(WeaponClass))
+		{
+			GunIn->Refill(); // A function in AMerc_Gun that sets CurrentAmmo = MaxAmmo
+			return;
+		}
 	}
 }
 

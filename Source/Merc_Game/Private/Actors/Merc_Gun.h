@@ -51,6 +51,8 @@ public:
 	void CancelReload();
 	void ResettingFullAutoFire();
 	void ApplyRecoil();
+	void Refill();
+	FORCEINLINE bool CanRefillAmmo() const { return CurrentAmmo < MaxAmmo; }
 	int GetCurrentAmmo();
 	int GetMaxAmmo();
 	UTexture2D* GetGunIcon();

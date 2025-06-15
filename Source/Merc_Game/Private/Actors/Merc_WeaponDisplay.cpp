@@ -45,17 +45,47 @@ void AMerc_WeaponDisplay::Tick(float DeltaTime)
 
 bool AMerc_WeaponDisplay::TryPurchase(AMerc_PlayerCharacter* Player)
 {
-	if (!Player || !WeaponClass) 
+	if (!Player || !WeaponClass)
 		return false;
 
-	if (Player->CanAfford(WeaponCost)) 
+	// Check if the player already owns this weapon
+	if (Player->HasWeapon(WeaponClass))
+	{
+		AMerc_Gun* OwnedGun = Player->GetWeaponByClass(WeaponClass);
+		if (OwnedGun && OwnedGun->CanRefillAmmo())
+		{
+			if (Player->GetPoints() >= AmmoCost)
+			{
+				Player->AddPoints(-AmmoCost);
+				OwnedGun->Refill();
+				return true;
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Ammo is already full. Cannot refill."));
+		}
+
+		return false; // Don’t allow refill if already full
+	}
+
+	// Otherwise, it's a new weapon purchase
+	if (Player->GetPoints() >= WeaponCost)
 	{
 		Player->AddPoints(-WeaponCost);
-		Player->AddWeaponToInventory(WeaponClass); // You create this
+		Player->AddWeaponToInventory(WeaponClass, true);
 		return true;
 	}
 
 	return false;
+}
+
+void AMerc_WeaponDisplay::ClearBuyerIfNoLongerOwned(AMerc_PlayerCharacter* Player)
+{
+	if (LastBuyer == Player && !Player->HasWeapon(WeaponClass))
+	{
+		LastBuyer = nullptr;
+	}
 }
 
 void AMerc_WeaponDisplay::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -63,10 +93,20 @@ void AMerc_WeaponDisplay::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AA
 	if (AMerc_PlayerCharacter* Player = Cast<AMerc_PlayerCharacter>(OtherActor))
 	{
 		bPlayerInRange = true;
-		UE_LOG(LogTemp, Log, TEXT("Player entered weapon buy zone."));
-		// Optionally store a reference to the player here for TryPurchase later
 		Player->SetNearbyWeaponBuy(this);
-		Player->ShowWeaponBuyPrompt(WeaponName.ToString(), WeaponCost);
+
+		const bool bPlayerOwnsWeapon = Player->HasWeapon(WeaponClass); // You'll need to have this function
+
+		if (bPlayerOwnsWeapon)
+		{
+			Player->ShowWeaponBuyPrompt(WeaponName.ToString(), AmmoCost, true); // true = isRefill
+		}
+		else
+		{
+			Player->ShowWeaponBuyPrompt(WeaponName.ToString(), WeaponCost, false);
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("Player entered weapon zone. Owns weapon? %s"), bPlayerOwnsWeapon ? TEXT("Yes") : TEXT("No"));
 	}
 }
 

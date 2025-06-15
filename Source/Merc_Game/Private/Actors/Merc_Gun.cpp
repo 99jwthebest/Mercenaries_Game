@@ -261,6 +261,12 @@ void AMerc_Gun::ApplyRecoil()
 	}
 }
 
+void AMerc_Gun::Refill()
+{
+	CurrentAmmo = MaxAmmo;
+	OnAmmoChanged.Broadcast(CurrentAmmo, MaxAmmo); // if using delegate
+}
+
 int AMerc_Gun::GetCurrentAmmo()
 {
 	return CurrentAmmo;

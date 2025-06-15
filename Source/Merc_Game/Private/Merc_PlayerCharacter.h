@@ -135,7 +135,7 @@ public:
 	UFUNCTION()
 	void OnAmmoChanged(int32 CurrentAmmo, int32 MaxAmmo);
 
-	void ShowWeaponBuyPrompt(FString WeaponName, int32 Cost);
+	void ShowWeaponBuyPrompt(FString WeaponName, int32 Cost, bool bIsRefill);
 	void HideWeaponBuyPrompt();
 
 	void SetNearbyWeaponBuy(AMerc_WeaponDisplay* NewWeapon);
@@ -145,7 +145,13 @@ public:
 	int32 GetPoints() const;
 	//bool CanAfford(int32 Cost) const;
 	
-	void AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass);
+	void AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass, bool bEquipImmediately);
+
+	bool HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const;
+
+	AMerc_Gun* GetWeaponByClass(TSubclassOf<AMerc_Gun> WeaponClass) const;
+
+	void RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass);
 
 
 private:
