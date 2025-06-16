@@ -52,7 +52,7 @@ public:
 	void ResettingFullAutoFire();
 	void ApplyRecoil();
 	void Refill();
-	FORCEINLINE bool CanRefillAmmo() const { return CurrentAmmo < MaxAmmo; }
+	FORCEINLINE bool CanRefillAmmo() const { return CurrentAmmoReserve < MaxReserveAmmo; }
 	int GetCurrentAmmo();
 	int GetMaxAmmo();
 	UTexture2D* GetGunIcon();
@@ -139,6 +139,18 @@ private:
 	int32 MaxAmmo = 30;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	int32 CurrentAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Ammo", meta = (AllowPrivateAccess = "true"))
+	int32 MaxClipSize = 30;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Ammo", meta = (AllowPrivateAccess = "true"))
+	int32 CurrentAmmoInClip;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Ammo", meta = (AllowPrivateAccess = "true"))
+	int32 MaxReserveAmmo = 90;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon|Ammo", meta = (AllowPrivateAccess = "true"))
+	int32 CurrentAmmoReserve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	float ReloadDuration = 2.0f;

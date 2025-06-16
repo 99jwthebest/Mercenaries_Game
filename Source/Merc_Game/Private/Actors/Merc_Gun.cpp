@@ -150,17 +150,17 @@ void AMerc_Gun::StartFiring()
 
 void AMerc_Gun::HandleFiring()
 {
-	if (CurrentAmmo <= 0)
+
+	if (CurrentAmmoInClip <= 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No ammo left!"));
+		UE_LOG(LogTemp, Warning, TEXT("Clip empty! Reload needed."));
 		StopFiring();
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Firing! Current Ammo = %d"), CurrentAmmo);
-	PullTrigger();
-	CurrentAmmo--;
-	UE_LOG(LogTemp, Log, TEXT("Ammo after shot = %d"), CurrentAmmo);
+	PullTrigger(); // Fire
+	CurrentAmmoInClip--;
+
 	ApplyRecoil();
 	NotifyAmmoChanged();
 }
@@ -202,7 +202,7 @@ void AMerc_Gun::StopFiring()
 
 void AMerc_Gun::StartReload()
 {
-	if (bIsReloading || CurrentAmmo == MaxAmmo)
+	if (bIsReloading || CurrentAmmoInClip == MaxClipSize || CurrentAmmoReserve <= 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Reload skipped. Already reloading or full ammo."));
 		return;
@@ -217,7 +217,13 @@ void AMerc_Gun::StartReload()
 void AMerc_Gun::FinishReload()
 {
 	bIsReloading = false;
-	CurrentAmmo = MaxAmmo;
+
+	int32 NeededAmmo = MaxClipSize - CurrentAmmoInClip;
+	int32 AmmoToLoad = FMath::Min(NeededAmmo, CurrentAmmoReserve);
+
+	CurrentAmmoInClip += AmmoToLoad;
+	CurrentAmmoReserve -= AmmoToLoad;
+
 	UE_LOG(LogTemp, Log, TEXT("Reload complete. Ammo = %d"), CurrentAmmo);
 	NotifyAmmoChanged();
 }
@@ -263,18 +269,19 @@ void AMerc_Gun::ApplyRecoil()
 
 void AMerc_Gun::Refill()
 {
-	CurrentAmmo = MaxAmmo;
-	OnAmmoChanged.Broadcast(CurrentAmmo, MaxAmmo); // if using delegate
+	CurrentAmmoReserve = MaxReserveAmmo;
+	//AmmoInClip = MaxClipSize;
+	NotifyAmmoChanged();
 }
 
 int AMerc_Gun::GetCurrentAmmo()
 {
-	return CurrentAmmo;
+	return CurrentAmmoInClip;
 }
 
 int AMerc_Gun::GetMaxAmmo()
 {
-	return MaxAmmo;
+	return CurrentAmmoReserve;
 }
 
 UTexture2D* AMerc_Gun::GetGunIcon()
@@ -289,7 +296,8 @@ void AMerc_Gun::BeginPlay()
 
 	CurrentAmmo = MaxAmmo;
 
-
+	CurrentAmmoInClip = MaxClipSize;
+	CurrentAmmoReserve = MaxReserveAmmo;
 }
 // Called every frame
 void AMerc_Gun::Tick(float DeltaTime)
@@ -325,6 +333,6 @@ void AMerc_Gun::Tick(float DeltaTime)
 
 void AMerc_Gun::NotifyAmmoChanged()
 {
-	OnAmmoChanged.Broadcast(CurrentAmmo, MaxAmmo);
+	OnAmmoChanged.Broadcast(CurrentAmmoInClip, CurrentAmmoReserve);
 }
 
