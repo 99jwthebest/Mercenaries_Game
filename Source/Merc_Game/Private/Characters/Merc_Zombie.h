@@ -41,16 +41,32 @@ protected:
 	float AttackRange = 100.f;
 
 	// Damage
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	float Damage = 20.f;
+	//UPROPERTY(EditAnywhere, Category = "Attack")
+	//float Damage = 20.f;
 
 	APawn* TargetPlayer;
 
-public:
-	// Called when hit
-	void TakeDamage(float Amount);
+	UPROPERTY(EditAnywhere, Category = "Death")
+	UParticleSystem* DeathEffect; // optional: blood/explosion FX
 
-	// Called when reaching the player
-	void AttackPlayer();
+public:
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AttackCooldown = 1.5f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float Damage = 20.f;
+
+	UPROPERTY()
+	bool bCanAttack = true;
+
+	FTimerHandle AttackCooldownTimer;
+
+public:
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+	void ResetAttackCooldown();
+
+	void Die();
 
 };

@@ -35,3 +35,41 @@ void AMerc_Zombie::Tick(float DeltaTime)
 
 
 }
+
+
+float AMerc_Zombie::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	const float DamageApplied = FMath::Min(CurrentHealth, DamageAmount);
+	CurrentHealth -= DamageApplied;
+
+	UE_LOG(LogTemp, Warning, TEXT("Zombie took %f damage. Remaining HP: %f"), DamageApplied, CurrentHealth);
+
+	if (CurrentHealth <= 0.f)
+	{
+		Die();
+	}
+
+	return DamageApplied;
+}
+
+void AMerc_Zombie::ResetAttackCooldown()
+{
+	bCanAttack = true;
+	UE_LOG(LogTemp, Warning, TEXT("Zombie cooldown reset. Can attack again."));
+}
+
+void AMerc_Zombie::Die()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Zombie died!"));
+
+	// Optional VFX
+	if (DeathEffect)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DeathEffect, GetActorLocation());
+	}
+
+	// Disable AI, collision, etc.
+	DetachFromControllerPendingDestroy();
+	SetActorEnableCollision(false);
+	SetLifeSpan(2.0f); // Clean up actor after delay
+}

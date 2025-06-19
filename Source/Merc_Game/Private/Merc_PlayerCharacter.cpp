@@ -209,20 +209,20 @@ float AMerc_PlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& 
 {
 	float DamageToApply = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	//DamageToApply = FMath::Min(CurrentHealth, DamageToApply);
-	//CurrentHealth -= DamageToApply;
-	//UE_LOG(LogTemp, Warning, TEXT("Current Health: '%f'"), CurrentHealth);
+	DamageToApply = FMath::Min(CurrentHealth, DamageToApply);
+	CurrentHealth -= DamageToApply;
+	UE_LOG(LogTemp, Warning, TEXT("Current Health: '%f'"), CurrentHealth);
 
-	//if (IsDead())
-	//{
-	//	ASimpleShooterGameModeBase* GameMode = GetWorld()->GetAuthGameMode<ASimpleShooterGameModeBase>();
-	//	if (GameMode != nullptr)
-	//	{
-	//		GameMode->PawnKilled(this);
-	//	}
-	//	DetachFromControllerPendingDestroy(); // ***** Maybe Change these things later. Not Sure, maybe.
-	//	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//}
+	if (IsDead())
+	{
+		//ASimpleShooterGameModeBase* GameMode = GetWorld()->GetAuthGameMode<ASimpleShooterGameModeBase>();
+		//if (GameMode != nullptr)
+		//{
+		//	GameMode->PawnKilled(this);
+		//}
+		DetachFromControllerPendingDestroy(); // ***** Maybe Change these things later. Not Sure, maybe.
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 
 	return DamageToApply;
 
