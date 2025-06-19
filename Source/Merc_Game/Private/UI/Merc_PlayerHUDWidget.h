@@ -8,6 +8,7 @@
 
 class UTextBlock;
 class UImage;
+class UProgressBar;
 
 UCLASS()
 class UMerc_PlayerHUDWidget : public UUserWidget
@@ -23,7 +24,7 @@ public:
 	void UpdateAmmo(int32 Current, int32 Max);
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateHealth(float Current, float Max);
+	void SetHealthPercent(float Percent);
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateGrenades(int32 Count);
@@ -40,7 +41,7 @@ protected:
 	UTextBlock* AmmoText;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* HealthText;
+	UProgressBar* HealthProgressBar;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GrenadeText;

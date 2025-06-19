@@ -4,6 +4,7 @@
 #include "UI/Merc_PlayerHUDWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "Components/ProgressBar.h"
 
 void UMerc_PlayerHUDWidget::NativeConstruct()
 {
@@ -22,11 +23,11 @@ void UMerc_PlayerHUDWidget::UpdateAmmo(int32 Current, int32 Max)
 	}
 }
 
-void UMerc_PlayerHUDWidget::UpdateHealth(float Current, float Max)
+void UMerc_PlayerHUDWidget::SetHealthPercent(float Percent)
 {
-	if (HealthText)
+	if (HealthProgressBar)
 	{
-		HealthText->SetText(FText::FromString(FString::Printf(TEXT("HP: %.0f / %.0f"), Current, Max)));
+		HealthProgressBar->SetPercent(Percent);
 	}
 }
 

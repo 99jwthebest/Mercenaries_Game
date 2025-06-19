@@ -95,7 +95,7 @@ void AMerc_PlayerCharacter::BeginPlay()
 			PlayerHUD->AddToViewport();
 			PlayerHUD->UpdateAmmo(Gun->GetCurrentAmmo(), Gun->GetMaxAmmo());
 			PlayerHUD->SetWeaponIcon(Gun->GetGunIcon());
-			//PlayerHUD->UpdateHealth(CurrentHealth, MaxHealth);
+			PlayerHUD->SetHealthPercent(GetHealthPercent());
 			//PlayerHUD->UpdateGrenades(CurrentGrenades); // optional
 			PlayerHUD->UpdatePoints(GetPoints());
 		}
@@ -212,6 +212,9 @@ float AMerc_PlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& 
 	DamageToApply = FMath::Min(CurrentHealth, DamageToApply);
 	CurrentHealth -= DamageToApply;
 	UE_LOG(LogTemp, Warning, TEXT("Current Health: '%f'"), CurrentHealth);
+
+	//OnHealthChanged.Broadcast(CurrentHealth, MaxHealth); // Step 4
+	PlayerHUD->SetHealthPercent(GetHealthPercent());
 
 	if (IsDead())
 	{
