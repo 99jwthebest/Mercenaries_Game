@@ -41,6 +41,14 @@ void AMerc_Gun::PullTrigger()
 	FHitResult Hit;
 	FVector ShotDirection;
 	bool bSuccess = GunTrace(Hit, ShotDirection);
+	AActor* HitActor2 = Hit.GetActor();
+	UPrimitiveComponent* HitComp2 = Hit.Component.Get();
+
+	UE_LOG(LogTemp, Log, TEXT("Hit Info - Actor: %s | Bone: %s | Component: %s"),
+		HitActor2 ? *HitActor2->GetName() : TEXT("None"),
+		*Hit.BoneName.ToString(),
+		HitComp2 ? *HitComp2->GetName() : TEXT("None"));
+
 
 	if (bSuccess)
 	{
