@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/DamageEvents.h"
+#include "Characters/Merc_Zombie.h"
 
 
 // Sets default values
@@ -29,46 +30,68 @@ AMerc_Gun::AMerc_Gun()
 void AMerc_Gun::PullTrigger()
 {
 	UE_LOG(LogTemp, Error, TEXT("You've Been Shot!!"));
-	if (MuzzleFlashEffect && MuzzleSound)
+
+	// Muzzle FX
+	if (MuzzleFlashEffect)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashEffect, MuzzleLocation->GetComponentTransform());
+	}
+	if (MuzzleSound)
+	{
 		UGameplayStatics::SpawnSoundAttached(MuzzleSound, Mesh, TEXT("RightHand"));
 		UE_LOG(LogTemp, Error, TEXT("You've Been Shot WITH SOUNDSSSSS!!"));
 	}
 	if (RecoilShake)
+	{
 		GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(RecoilShake);
+	}
 
+	// Do trace
 	FHitResult Hit;
 	FVector ShotDirection;
 	bool bSuccess = GunTrace(Hit, ShotDirection);
-	AActor* HitActor2 = Hit.GetActor();
-	UPrimitiveComponent* HitComp2 = Hit.Component.Get();
-
-	UE_LOG(LogTemp, Log, TEXT("Hit Info - Actor: %s | Bone: %s | Component: %s"),
-		HitActor2 ? *HitActor2->GetName() : TEXT("None"),
-		*Hit.BoneName.ToString(),
-		HitComp2 ? *HitComp2->GetName() : TEXT("None"));
-
 
 	if (bSuccess)
 	{
+		// Debug info
+		AActor* HitActor = Hit.GetActor();
+		UPrimitiveComponent* HitComp = Hit.Component.Get();
+
+		UE_LOG(LogTemp, Log, TEXT("Hit Info - Actor: %s | Bone: %s | Component: %s"),
+			HitActor ? *HitActor->GetName() : TEXT("None"),
+			*Hit.BoneName.ToString(),
+			HitComp ? *HitComp->GetName() : TEXT("None"));
+
+		// Visualize
 		DrawDebugPoint(GetWorld(), Hit.Location, 20, FColor::Red, true);
-		if (ImpactEffect && ImpactSound)
+		if (ImpactEffect)
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, Hit.Location, ShotDirection.Rotation());
+		}
+		if (ImpactSound)
+		{
 			UGameplayStatics::SpawnSoundAtLocation(GetWorld(), ImpactSound, Hit.Location);
 		}
 
-		AActor* HitActor = Hit.GetActor();
+		// Damage
 		if (HitActor)
 		{
-			FPointDamageEvent DamageEvent(Damage, Hit, ShotDirection, nullptr);
+			float FinalDamage = Damage;
+
+			// If hit a zombie, apply damage multiplier
+			if (AMerc_Zombie* Zombie = Cast<AMerc_Zombie>(HitActor))
+			{
+				FinalDamage *= Zombie->GetDamageMultiplierFromComponent(HitComp);
+			}
+
+			FPointDamageEvent DamageEvent(FinalDamage, Hit, ShotDirection, nullptr);
 			AController* OwnerController = GetOwnerController();
-			HitActor->TakeDamage(Damage, DamageEvent, OwnerController, this);
+			HitActor->TakeDamage(FinalDamage, DamageEvent, OwnerController, this);
+
+			UE_LOG(LogTemp, Log, TEXT("Dealt %f damage to %s"), FinalDamage, *HitActor->GetName());
 		}
 	}
 
-	//DrawDebugCamera(GetWorld(), Location, Rotation, 90, 3, FColor::Red, true);
 }
 
 bool AMerc_Gun::GunTrace(FHitResult& Hit, FVector& ShotDirection)

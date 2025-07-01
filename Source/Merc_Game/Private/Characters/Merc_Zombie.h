@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Structs/DamageZoneTypes.h"
 #include "Merc_Zombie.generated.h"
 
 UCLASS()
@@ -49,6 +50,41 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Death")
 	UParticleSystem* DeathEffect; // optional: blood/explosion FX
 
+	UPROPERTY()
+	TArray<FDamageZone> DamageZones;
+
+
+	UPROPERTY()
+	UCapsuleComponent* HeadCollider;
+
+	UPROPERTY()
+	UCapsuleComponent* BodyCollider;
+
+	UPROPERTY()
+	UCapsuleComponent* RightArmCollider;
+
+	UPROPERTY()
+	UCapsuleComponent* LeftArmCollider;
+
+	UPROPERTY()
+	UCapsuleComponent* LeftLegCollider;
+
+	UPROPERTY()
+	UCapsuleComponent* RightLegCollider;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+	float HeadDamageMultiplier;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+	float BodyDamageMultiplier;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+	float RightArmDamageMultiplier;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+	float LeftArmDamageMultiplier;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+	float LeftLegDamageMultiplier;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+	float RightLegDamageMultiplier;
+
 public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -69,4 +105,12 @@ public:
 
 	void Die();
 
+	// Example helper
+	float GetDamageMultiplierFromComponent(UPrimitiveComponent* HitComp) const;
+
+protected:
+
+	void InitCapsuleColliders();
+	UCapsuleComponent* CreateZoneCollider(FName Name, FName Bone, FVector Size, float Multiplier);
+	void AddingDamageZones();
 };
