@@ -118,6 +118,18 @@ float AMerc_Zombie::GetDamageMultiplierFromComponent(UPrimitiveComponent* HitCom
 
 }
 
+float AMerc_Zombie::GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const
+{
+	for (const FDamageZone& Zone : DamageZones)
+	{
+		if (Zone.Collider == HitComponent)
+		{
+			return Zone.DamageMultiplier;
+		}
+	}
+	return 1.0f;  // Default no-multiplier
+}
+
 void AMerc_Zombie::InitCapsuleColliders()
 {
 	UE_LOG(LogTemp, Warning, TEXT("InitCapsuleColliders called"));

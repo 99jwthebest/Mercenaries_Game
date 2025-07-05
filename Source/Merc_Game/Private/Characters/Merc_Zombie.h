@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Structs/DamageZoneTypes.h"
+#include "Interfaces/IHitDamageable.h"
 #include "Merc_Zombie.generated.h"
 
 UCLASS()
-class AMerc_Zombie : public ACharacter
+class AMerc_Zombie : public ACharacter, public IHitDamageable
 {
 	GENERATED_BODY()
 
@@ -107,6 +108,8 @@ public:
 
 	// Example helper
 	float GetDamageMultiplierFromComponent(UPrimitiveComponent* HitComp) const;
+
+	virtual float GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const override;
 
 protected:
 

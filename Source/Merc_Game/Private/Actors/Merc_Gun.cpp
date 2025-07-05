@@ -6,8 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/DamageEvents.h"
-#include "Characters/Merc_Zombie.h"
-
+#include "Interfaces/IHitDamageable.h"
 
 // Sets default values
 AMerc_Gun::AMerc_Gun()
@@ -78,10 +77,9 @@ void AMerc_Gun::PullTrigger()
 		{
 			float FinalDamage = Damage;
 
-			// If hit a zombie, apply damage multiplier
-			if (AMerc_Zombie* Zombie = Cast<AMerc_Zombie>(HitActor))
+			if (HitActor->GetClass()->ImplementsInterface(UHitDamageable::StaticClass()))
 			{
-				FinalDamage *= Zombie->GetDamageMultiplierFromComponent(HitComp);
+				FinalDamage *= IHitDamageable::Execute_GetDamageMultiplierFromComponent(HitActor, HitComp);
 			}
 
 			FPointDamageEvent DamageEvent(FinalDamage, Hit, ShotDirection, nullptr);
