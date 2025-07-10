@@ -135,11 +135,11 @@ void AMerc_Zombie::InitCapsuleColliders()
 	UE_LOG(LogTemp, Warning, TEXT("InitCapsuleColliders called"));
 
 	HeadCollider = CreateZoneCollider(TEXT("HeadCollider"), TEXT("head"), FVector(10.f, 15.f, 0), 2.0f);
-	BodyCollider = CreateZoneCollider(TEXT("BodyCollider"), TEXT("spine_03"), FVector(20.f, 30.f, 0), 1.0f);
-	LeftArmCollider = CreateZoneCollider(TEXT("LeftArmCollider"), TEXT("upperarm_l"), FVector(8.f, 20.f, 0), 0.8f);
-	RightArmCollider = CreateZoneCollider(TEXT("RightArmCollider"), TEXT("upperarm_r"), FVector(8.f, 20.f, 0), 0.8f);
-	LeftLegCollider = CreateZoneCollider(TEXT("LeftLegCollider"), TEXT("thigh_l"), FVector(10.f, 25.f, 0), 0.7f);
-	RightLegCollider = CreateZoneCollider(TEXT("RightLegCollider"), TEXT("thigh_r"), FVector(10.f, 25.f, 0), 0.7f);
+	BodyCollider = CreateZoneCollider(TEXT("BodyCollider"), TEXT("Spine2"), FVector(20.f, 30.f, 0), 1.0f);
+	LeftArmCollider = CreateZoneCollider(TEXT("LeftArmCollider"), TEXT("LeftArm"), FVector(8.f, 20.f, 0), 0.8f);
+	RightArmCollider = CreateZoneCollider(TEXT("RightArmCollider"), TEXT("RightArm"), FVector(8.f, 20.f, 0), 0.8f);
+	LeftLegCollider = CreateZoneCollider(TEXT("LeftLegCollider"), TEXT("LeftUpLeg"), FVector(10.f, 25.f, 0), 0.7f);
+	RightLegCollider = CreateZoneCollider(TEXT("RightLegCollider"), TEXT("RightUpLeg"), FVector(10.f, 25.f, 0), 0.7f);
 
 	UE_LOG(LogTemp, Warning, TEXT("Final DamageZones.Num = %d"), DamageZones.Num());
 
