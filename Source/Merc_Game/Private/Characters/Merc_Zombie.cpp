@@ -37,7 +37,6 @@ void AMerc_Zombie::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
 }
 
 
