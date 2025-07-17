@@ -28,9 +28,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// Called by player when they try to buy this weapon
-	bool TryPurchase(class AMerc_PlayerCharacter* Player);
+	bool TryPurchase(AActor* BuyerActor);
 
-	void ClearBuyerIfNoLongerOwned(AMerc_PlayerCharacter* Player);
+	void ClearBuyerIfNoLongerOwned(AActor* BuyerActor);
 
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -63,7 +63,7 @@ private:
 
 	bool bPlayerInRange = false;
 
-	TWeakObjectPtr<AMerc_PlayerCharacter> LastBuyer;
+	TWeakObjectPtr<AActor> LastBuyer;
 
 public:
 	FORCEINLINE TSubclassOf<AMerc_Gun> GetWeaponClass() const { return WeaponClass; }

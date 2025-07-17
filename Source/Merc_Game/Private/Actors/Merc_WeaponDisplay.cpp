@@ -4,8 +4,9 @@
 #include "Actors/Merc_WeaponDisplay.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
-#include "Merc_PlayerCharacter.h"
 #include "Merc_Gun.h"
+#include "Interfaces/IWeaponBuyer.h"
+
 
 // Sets default values
 AMerc_WeaponDisplay::AMerc_WeaponDisplay()
@@ -43,21 +44,19 @@ void AMerc_WeaponDisplay::Tick(float DeltaTime)
 
 }
 
-bool AMerc_WeaponDisplay::TryPurchase(AMerc_PlayerCharacter* Player)
+bool AMerc_WeaponDisplay::TryPurchase(AActor* BuyerActor)
 {
-	if (!Player || !WeaponClass)
+	if (!BuyerActor || !WeaponClass || !BuyerActor->GetClass()->ImplementsInterface(UWeaponBuyer::StaticClass()))
 		return false;
 
-	// Check if the player already owns this weapon
-	if (Player->HasWeapon(WeaponClass))
+	if (IWeaponBuyer::Execute_HasWeapon(BuyerActor, WeaponClass))
 	{
-		AMerc_Gun* OwnedGun = Player->GetWeaponByClass(WeaponClass);
+		AMerc_Gun* OwnedGun = IWeaponBuyer::Execute_GetWeaponByClass(BuyerActor, WeaponClass);
 		if (OwnedGun && OwnedGun->CanRefillAmmo())
 		{
-			if (Player->GetPoints() >= AmmoCost)
+			if (IWeaponBuyer::Execute_TryRefillAmmo(BuyerActor, WeaponClass, AmmoCost))
 			{
-				Player->AddPoints(-AmmoCost);
-				OwnedGun->Refill();
+				LastBuyer = BuyerActor;
 				return true;
 			}
 		}
@@ -66,58 +65,62 @@ bool AMerc_WeaponDisplay::TryPurchase(AMerc_PlayerCharacter* Player)
 			UE_LOG(LogTemp, Warning, TEXT("Ammo is already full. Cannot refill."));
 		}
 
-		return false; // Don’t allow refill if already full
+		return false;
 	}
 
 	// Otherwise, it's a new weapon purchase
-	if (Player->GetPoints() >= WeaponCost)
+	if (IWeaponBuyer::Execute_TryBuyWeapon(BuyerActor, WeaponClass, WeaponCost))
 	{
-		Player->AddPoints(-WeaponCost);
-		Player->AddWeaponToInventory(WeaponClass, true);
+		LastBuyer = BuyerActor;
 		return true;
 	}
 
 	return false;
 }
 
-void AMerc_WeaponDisplay::ClearBuyerIfNoLongerOwned(AMerc_PlayerCharacter* Player)
+
+void AMerc_WeaponDisplay::ClearBuyerIfNoLongerOwned(AActor* BuyerActor)
 {
-	if (LastBuyer == Player && !Player->HasWeapon(WeaponClass))
+	if (LastBuyer == BuyerActor && !IWeaponBuyer::Execute_HasWeapon(BuyerActor, WeaponClass))
 	{
 		LastBuyer = nullptr;
 	}
 }
 
+
 void AMerc_WeaponDisplay::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (AMerc_PlayerCharacter* Player = Cast<AMerc_PlayerCharacter>(OtherActor))
+	if (OtherActor && OtherActor->GetClass()->ImplementsInterface(UWeaponBuyer::StaticClass()))
 	{
 		bPlayerInRange = true;
-		Player->SetNearbyWeaponBuy(this);
+		LastBuyer = OtherActor;
 
-		const bool bPlayerOwnsWeapon = Player->HasWeapon(WeaponClass); // You'll need to have this function
+		IWeaponBuyer::Execute_SetNearbyWeaponBuy(OtherActor, this);
+
+		const bool bPlayerOwnsWeapon = IWeaponBuyer::Execute_HasWeapon(OtherActor, WeaponClass);
 
 		if (bPlayerOwnsWeapon)
 		{
-			Player->ShowWeaponBuyPrompt(WeaponName.ToString(), AmmoCost, true); // true = isRefill
+			IWeaponBuyer::Execute_ShowWeaponBuyPrompt(OtherActor, WeaponName.ToString(), AmmoCost, true);
 		}
 		else
 		{
-			Player->ShowWeaponBuyPrompt(WeaponName.ToString(), WeaponCost, false);
+			IWeaponBuyer::Execute_ShowWeaponBuyPrompt(OtherActor, WeaponName.ToString(), WeaponCost, false);
 		}
 
 		UE_LOG(LogTemp, Log, TEXT("Player entered weapon zone. Owns weapon? %s"), bPlayerOwnsWeapon ? TEXT("Yes") : TEXT("No"));
 	}
+
 }
 
 void AMerc_WeaponDisplay::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (AMerc_PlayerCharacter* Player = Cast<AMerc_PlayerCharacter>(OtherActor))
+	if (OtherActor && OtherActor->GetClass()->ImplementsInterface(UWeaponBuyer::StaticClass()))
 	{
 		bPlayerInRange = false;
 		UE_LOG(LogTemp, Log, TEXT("Player exited weapon buy zone."));
-		Player->SetNearbyWeaponBuy(nullptr);
-		Player->HideWeaponBuyPrompt();
+		IWeaponBuyer::Execute_SetNearbyWeaponBuy(OtherActor, nullptr);
+		IWeaponBuyer::Execute_HideWeaponBuyPrompt(OtherActor);
 	}
 }
 

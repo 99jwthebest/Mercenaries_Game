@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/IWeaponBuyer.h"
 #include "Merc_PlayerCharacter.generated.h"
 
 class AMerc_Gun;
@@ -18,7 +19,7 @@ class USpringArmComponent;
 struct FInputActionValue;
 
 UCLASS()
-class AMerc_PlayerCharacter : public ACharacter
+class AMerc_PlayerCharacter : public ACharacter, public IWeaponBuyer
 {
 	GENERATED_BODY()
 
@@ -153,6 +154,19 @@ public:
 
 	void RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass);
 
+	virtual bool TryBuyWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost) override;
+
+	virtual bool TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)override;
+
+	virtual bool HasWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass) const override;
+
+	virtual class AMerc_Gun* GetWeaponByClass_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass) override;
+
+	virtual void ShowWeaponBuyPrompt_Implementation(const FString& WeaponName, int32 Cost, bool bIsRefill) override;
+
+	virtual void HideWeaponBuyPrompt_Implementation() override;
+
+	virtual void SetNearbyWeaponBuy_Implementation(class AMerc_WeaponDisplay* NewWeaponDisplay) override;
 
 private:
 

@@ -512,6 +512,90 @@ void AMerc_PlayerCharacter::RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass)
 	}
 }
 
+bool AMerc_PlayerCharacter::TryBuyWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
+{
+	if (GetPoints() < Cost)
+		return false;
+
+	AddPoints(-Cost);
+	AddWeaponToInventory(WeaponClass, true);
+	return true;
+}
+
+bool AMerc_PlayerCharacter::TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
+{
+	AMerc_Gun* GunIn = GetWeaponByClass(WeaponClass);
+	if (GunIn && GunIn->CanRefillAmmo() && GetPoints() >= Cost)
+	{
+		AddPoints(-Cost);
+		GunIn->Refill();
+		return true;
+	}
+
+	return false;
+}
+
+bool AMerc_PlayerCharacter::HasWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass) const
+{
+	for (AMerc_Gun* GunIn : Weapons)
+	{
+		if (GunIn && GunIn->IsA(WeaponClass))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+AMerc_Gun* AMerc_PlayerCharacter::GetWeaponByClass_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass)
+{
+	for (AMerc_Gun* Weapon : Weapons)
+	{
+		if (Weapon && Weapon->IsA(WeaponClass))
+		{
+			return Weapon;
+		}
+	}
+	return nullptr;
+}
+
+void AMerc_PlayerCharacter::ShowWeaponBuyPrompt_Implementation(const FString& WeaponName, int32 Cost, bool bIsRefill)
+{
+	if (WeaponBuyPromptWidget)
+	{
+		FString Prompt;
+
+		if (bIsRefill)
+		{
+			Prompt = FString::Printf(TEXT("[E] Refill %s Ammo - %d Points"), *WeaponName, Cost);
+		}
+		else
+		{
+			Prompt = FString::Printf(TEXT("[E] Buy %s - %d Points"), *WeaponName, Cost);
+		}
+
+		if (UMerc_WeaponBuyPromptWidget* PromptWidget = Cast<UMerc_WeaponBuyPromptWidget>(WeaponBuyPromptWidget))
+		{
+			PromptWidget->SetPromptText(Prompt);
+		}
+
+		WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Visible);
+	}
+}
+
+void AMerc_PlayerCharacter::HideWeaponBuyPrompt_Implementation()
+{
+	if (WeaponBuyPromptWidget)
+	{
+		WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
+void AMerc_PlayerCharacter::SetNearbyWeaponBuy_Implementation(AMerc_WeaponDisplay* NewWeaponDisplay)
+{
+	NearbyWeaponBuy = NewWeaponDisplay;
+}
+
 
 bool AMerc_PlayerCharacter::IsDead() const
 {
