@@ -86,6 +86,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
 	float RightLegDamageMultiplier;
 
+	UPROPERTY()
+	AController* LastInstigator = nullptr;
+
+
 public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")

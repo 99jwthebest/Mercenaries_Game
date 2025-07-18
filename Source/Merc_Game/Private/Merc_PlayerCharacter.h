@@ -16,6 +16,7 @@ class UInputAction;
 class UMerc_PlayerHUDWidget;
 class UMerc_WeaponBuyPromptWidget;
 class USpringArmComponent;
+class UStatTrackerComponent;
 struct FInputActionValue;
 
 UCLASS()
@@ -143,6 +144,8 @@ public:
 	FORCEINLINE AMerc_WeaponDisplay* GetNearbyWeapon() const { return NearbyWeaponBuy; }
 	FORCEINLINE bool CanAfford(int32 Cost) const { return CurrentPoints >= Cost; }
 	void AddPoints(int32 Amount);
+	UFUNCTION()
+	void HandleScoreChanged(int32 NewScore);
 	int32 GetPoints() const;
 	//bool CanAfford(int32 Cost) const;
 	
@@ -216,5 +219,8 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Points")
 	int32 CurrentPoints = 1000; // Starting points, change as needed
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stats, meta = (AllowPrivateAccess = "true"))
+	UStatTrackerComponent* StatTrackerComp;
 
 };

@@ -18,6 +18,7 @@
 #include "UI/Merc_PlayerHUDWidget.h"
 #include "UI/Merc_WeaponBuyPromptWidget.h"
 #include "Actors/Merc_WeaponDisplay.h"
+#include "Components/StatTrackerComponent.h"
 
 
 // Sets default values
@@ -61,7 +62,7 @@ AMerc_PlayerCharacter::AMerc_PlayerCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 	CharacterStateComp = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("Character State Component"));
-
+	StatTrackerComp = CreateDefaultSubobject<UStatTrackerComponent>(TEXT("StatTracker"));
 }
 
 // Called when the game starts or when spawned
@@ -109,6 +110,11 @@ void AMerc_PlayerCharacter::BeginPlay()
 			WeaponBuyPromptWidget->AddToViewport();
 			WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
+	}
+
+	if (StatTrackerComp)
+	{
+		StatTrackerComp->OnScoreChanged.AddDynamic(this, &AMerc_PlayerCharacter::HandleScoreChanged);
 	}
 
 }
@@ -438,6 +444,14 @@ void AMerc_PlayerCharacter::AddPoints(int32 Amount)
 	if (PlayerHUD)
 	{
 		PlayerHUD->UpdatePoints(CurrentPoints);
+	}
+}
+
+void AMerc_PlayerCharacter::HandleScoreChanged(int32 NewScore)
+{
+	if (PlayerHUD)
+	{
+		PlayerHUD->UpdatePoints(NewScore);
 	}
 }
 

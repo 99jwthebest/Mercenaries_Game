@@ -8,6 +8,7 @@
 #include "NavigationSystem.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/StatTrackerComponent.h"
 
 
 // Sets default values
@@ -47,6 +48,9 @@ float AMerc_Zombie::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 
 	UE_LOG(LogTemp, Warning, TEXT("Zombie took %f damage. Remaining HP: %f"), DamageApplied, CurrentHealth);
 
+	// Save the instigator for later (used in Die)
+	LastInstigator = EventInstigator;
+
 	if (CurrentHealth <= 0.f)
 	{
 		Die();
@@ -64,6 +68,19 @@ void AMerc_Zombie::ResetAttackCooldown()
 void AMerc_Zombie::Die()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Zombie died!"));
+
+	// Reward score to killer
+	if (LastInstigator && LastInstigator->GetPawn())
+	{
+		AActor* Killer = LastInstigator->GetPawn(); // Could be player or bot
+
+		if (UStatTrackerComponent* StatTracker = Killer->FindComponentByClass<UStatTrackerComponent>())
+		{
+			// Example: +200 for kill
+			StatTracker->AddScore(200);
+			StatTracker->AddKill();  // You can create AddKill() method too
+		}
+	}
 
 	// Optional VFX
 	if (DeathEffect)

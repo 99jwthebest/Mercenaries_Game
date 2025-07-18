@@ -7,6 +7,8 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/DamageEvents.h"
 #include "Interfaces/IHitDamageable.h"
+#include "Components/StatTrackerComponent.h"
+
 
 // Sets default values
 AMerc_Gun::AMerc_Gun()
@@ -75,11 +77,27 @@ void AMerc_Gun::PullTrigger()
 		// Damage
 		if (HitActor)
 		{
+			float DamageMultiplier = 1.0f;
 			float FinalDamage = Damage;
 
 			if (HitActor->GetClass()->ImplementsInterface(UHitDamageable::StaticClass()))
 			{
-				FinalDamage *= IHitDamageable::Execute_GetDamageMultiplierFromComponent(HitActor, HitComp);
+				DamageMultiplier = IHitDamageable::Execute_GetDamageMultiplierFromComponent(HitActor, HitComp);
+				FinalDamage *= DamageMultiplier;
+			}
+
+			// Try adding score to the owner (shooter)
+			if (AActor* OwnerActor = GetOwner())
+			{
+				if (UStatTrackerComponent* StatTracker = OwnerActor->FindComponentByClass<UStatTrackerComponent>())
+				{
+					// Optional: Use a smarter score system, e.g. headshots = 100, body = 50, etc.
+					const bool bIsHeadshot = DamageMultiplier > 2.0f;
+					const int32 ScoreToAdd = bIsHeadshot ? 100 : 50;
+
+					StatTracker->AddScore(ScoreToAdd);
+					StatTracker->AddCombo(1);
+				}
 			}
 
 			FPointDamageEvent DamageEvent(FinalDamage, Hit, ShotDirection, nullptr);
