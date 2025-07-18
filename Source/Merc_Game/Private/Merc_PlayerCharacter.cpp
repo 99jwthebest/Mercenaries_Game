@@ -471,7 +471,7 @@ void AMerc_PlayerCharacter::AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunCl
 	}
 }
 
-bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponeeClass) const
+bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const
 {
 	for (AMerc_Gun* GunIn : Weapons)
 	{
@@ -483,22 +483,9 @@ bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponeeClass) cons
 	return false;
 }
 
-
-void AMerc_PlayerCharacter::RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass)
-{
-	for (AMerc_Gun* GunIn : Weapons)
-	{
-		if (GunIn && GunIn->IsA(WeaponClass))
-		{
-			GunIn->Refill(); // A function in AMerc_Gun that sets CurrentAmmo = MaxAmmo
-			return;
-		}
-	}
-}
-
 bool AMerc_PlayerCharacter::TryBuyWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
 {
-	if (StatTrackerComp->GetScore() < Cost)
+	if (StatTrackerComp->GetMoney() < Cost)
 		return false;
 
 	StatTrackerComp->AddMoney(-Cost);
@@ -508,8 +495,8 @@ bool AMerc_PlayerCharacter::TryBuyWeapon_Implementation(TSubclassOf<class AMerc_
 
 bool AMerc_PlayerCharacter::TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
 {
-	AMerc_Gun* GunIn = GetWeaponByClass(WeaponClass);
-	if (GunIn && GunIn->CanRefillAmmo() && StatTrackerComp->GetScore() >= Cost)
+	AMerc_Gun* GunIn = Execute_GetWeaponByClass(this, WeaponClass);
+	if (GunIn && GunIn->CanRefillAmmo() && StatTrackerComp->GetMoney() >= Cost)
 	{
 		StatTrackerComp->AddMoney(-Cost);
 		GunIn->Refill();

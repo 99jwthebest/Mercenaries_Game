@@ -139,23 +139,18 @@ public:
 
 	void ShowWeaponBuyPrompt(FString WeaponName, int32 Cost, bool bIsRefill);
 
-	FORCEINLINE AMerc_WeaponDisplay* GetNearbyWeapon() const { return NearbyWeaponBuy; }
 	UFUNCTION()
 	void HandleScoreChanged(int32 NewScore);
 	UFUNCTION()
 	void HandleMoneyChanged(int32 NewMoneyAmount);
-	//bool CanAfford(int32 Cost) const;
 	
 	void AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass, bool bEquipImmediately);
 
 	bool HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const;
 
-
-	void RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass);
-
 	virtual bool TryBuyWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost) override;
 
-	virtual bool TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)override;
+	virtual bool TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost) override;
 
 	virtual bool HasWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass) const override;
 
