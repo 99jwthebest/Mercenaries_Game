@@ -11,6 +11,7 @@ UStatTrackerComponent::UStatTrackerComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	Score = 0;
+	Money = 500;
 	Kills = 0;
 	Headshots = 0;
 	Combo = 0;
@@ -23,6 +24,13 @@ void UStatTrackerComponent::AddScore(int32 Amount)
 	Score += Amount;
 	UE_LOG(LogTemp, Warning, TEXT("Score = %d"), Score);
 	OnScoreChanged.Broadcast(Score);
+}
+
+void UStatTrackerComponent::AddMoney(int32 Amount)
+{
+	Money += Amount;
+	UE_LOG(LogTemp, Warning, TEXT("Money = %d"), Money);
+	OnMoneyChanged.Broadcast(Money);
 }
 
 void UStatTrackerComponent::AddKill()

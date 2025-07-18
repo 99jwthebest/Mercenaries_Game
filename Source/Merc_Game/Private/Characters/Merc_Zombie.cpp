@@ -78,6 +78,7 @@ void AMerc_Zombie::Die()
 		{
 			// Example: +200 for kill
 			StatTracker->AddScore(200);
+			StatTracker->AddMoney(200);
 			StatTracker->AddKill();  // You can create AddKill() method too
 		}
 	}

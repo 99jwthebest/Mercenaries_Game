@@ -96,6 +96,7 @@ void AMerc_Gun::PullTrigger()
 					const int32 ScoreToAdd = bIsHeadshot ? 100 : 50;
 
 					StatTracker->AddScore(ScoreToAdd);
+					StatTracker->AddMoney(ScoreToAdd);
 					StatTracker->AddCombo(1);
 				}
 			}

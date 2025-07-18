@@ -47,10 +47,18 @@ void UMerc_PlayerHUDWidget::SetWeaponIcon(UTexture2D* NewIcon)
 	}
 }
 
-void UMerc_PlayerHUDWidget::UpdatePoints(int32 Count)
+void UMerc_PlayerHUDWidget::UpdateScore(int32 Count)
 {
-	if (PlayerPointsText)
+	if (PlayerScoreText)
 	{
-		PlayerPointsText->SetText(FText::FromString(FString::Printf(TEXT("Points: %d"), Count)));
+		PlayerScoreText->SetText(FText::FromString(FString::Printf(TEXT("Score: %d"), Count)));
+	}
+}
+
+void UMerc_PlayerHUDWidget::UpdateMoney(int32 Count)
+{
+	if (PlayerMoneyText)
+	{
+		PlayerMoneyText->SetText(FText::FromString(FString::Printf(TEXT("Money $ %d"), Count)));
 	}
 }

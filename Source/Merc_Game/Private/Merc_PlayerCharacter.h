@@ -138,22 +138,18 @@ public:
 	void OnAmmoChanged(int32 CurrentAmmo, int32 MaxAmmo);
 
 	void ShowWeaponBuyPrompt(FString WeaponName, int32 Cost, bool bIsRefill);
-	void HideWeaponBuyPrompt();
 
-	void SetNearbyWeaponBuy(AMerc_WeaponDisplay* NewWeapon);
 	FORCEINLINE AMerc_WeaponDisplay* GetNearbyWeapon() const { return NearbyWeaponBuy; }
-	FORCEINLINE bool CanAfford(int32 Cost) const { return CurrentPoints >= Cost; }
-	void AddPoints(int32 Amount);
 	UFUNCTION()
 	void HandleScoreChanged(int32 NewScore);
-	int32 GetPoints() const;
+	UFUNCTION()
+	void HandleMoneyChanged(int32 NewMoneyAmount);
 	//bool CanAfford(int32 Cost) const;
 	
 	void AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass, bool bEquipImmediately);
 
 	bool HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const;
 
-	AMerc_Gun* GetWeaponByClass(TSubclassOf<AMerc_Gun> WeaponClass) const;
 
 	void RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass);
 
@@ -217,8 +213,6 @@ private:
 	UPROPERTY()
 	UMerc_WeaponBuyPromptWidget* WeaponBuyPromptWidget;
 
-	UPROPERTY(EditAnywhere, Category = "Points")
-	int32 CurrentPoints = 1000; // Starting points, change as needed
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stats, meta = (AllowPrivateAccess = "true"))
 	UStatTrackerComponent* StatTrackerComp;

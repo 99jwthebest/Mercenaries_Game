@@ -33,7 +33,9 @@ public:
 	void SetWeaponIcon(UTexture2D* NewIcon);
 
 	UFUNCTION(BlueprintCallable)
-	void UpdatePoints(int32 Count);
+	void UpdateScore(int32 Count);
+	UFUNCTION(BlueprintCallable)
+	void UpdateMoney(int32 Count);
 
 protected:
 
@@ -50,6 +52,8 @@ protected:
 	UImage* WeaponIcon;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* PlayerPointsText;
+	UTextBlock* PlayerScoreText;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* PlayerMoneyText;
 
 };

@@ -98,7 +98,8 @@ void AMerc_PlayerCharacter::BeginPlay()
 			PlayerHUD->SetWeaponIcon(Gun->GetGunIcon());
 			PlayerHUD->SetHealthPercent(GetHealthPercent());
 			//PlayerHUD->UpdateGrenades(CurrentGrenades); // optional
-			PlayerHUD->UpdatePoints(GetPoints());
+			PlayerHUD->UpdateScore(StatTrackerComp->GetScore());
+			PlayerHUD->UpdateMoney(StatTrackerComp->GetMoney());
 		}
 	}
 
@@ -115,6 +116,7 @@ void AMerc_PlayerCharacter::BeginPlay()
 	if (StatTrackerComp)
 	{
 		StatTrackerComp->OnScoreChanged.AddDynamic(this, &AMerc_PlayerCharacter::HandleScoreChanged);
+		StatTrackerComp->OnMoneyChanged.AddDynamic(this, &AMerc_PlayerCharacter::HandleMoneyChanged);
 	}
 
 }
@@ -422,42 +424,21 @@ void AMerc_PlayerCharacter::ShowWeaponBuyPrompt(FString WeaponName, int32 Cost, 
 	}
 }
 
-void AMerc_PlayerCharacter::HideWeaponBuyPrompt()
-{
-	if (WeaponBuyPromptWidget)
-	{
-		WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Hidden);
-	}
-}
-
-void AMerc_PlayerCharacter::SetNearbyWeaponBuy(AMerc_WeaponDisplay* NewWeapon)
-{
-	NearbyWeaponBuy = NewWeapon;
-}
-
-void AMerc_PlayerCharacter::AddPoints(int32 Amount)
-{
-	CurrentPoints = FMath::Clamp(CurrentPoints + Amount, 0, INT32_MAX);
-	UE_LOG(LogTemp, Log, TEXT("Points updated: %d"), CurrentPoints);
-
-	// Optional: Notify UI
-	if (PlayerHUD)
-	{
-		PlayerHUD->UpdatePoints(CurrentPoints);
-	}
-}
 
 void AMerc_PlayerCharacter::HandleScoreChanged(int32 NewScore)
 {
 	if (PlayerHUD)
 	{
-		PlayerHUD->UpdatePoints(NewScore);
+		PlayerHUD->UpdateScore(NewScore);
 	}
 }
 
-int32 AMerc_PlayerCharacter::GetPoints() const
+void AMerc_PlayerCharacter::HandleMoneyChanged(int32 NewMoneyAmount)
 {
-	return CurrentPoints;
+	if (PlayerHUD)
+	{
+		PlayerHUD->UpdateMoney(NewMoneyAmount);
+	}
 }
 
 void AMerc_PlayerCharacter::AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunClass, bool bEquipImmediately)
@@ -490,7 +471,7 @@ void AMerc_PlayerCharacter::AddWeaponToInventory(TSubclassOf<AMerc_Gun> NewGunCl
 	}
 }
 
-bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const
+bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponeeClass) const
 {
 	for (AMerc_Gun* GunIn : Weapons)
 	{
@@ -502,17 +483,6 @@ bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const
 	return false;
 }
 
-AMerc_Gun* AMerc_PlayerCharacter::GetWeaponByClass(TSubclassOf<AMerc_Gun> WeaponClass) const
-{
-	for (AMerc_Gun* Weapon : Weapons)
-	{
-		if (Weapon && Weapon->IsA(WeaponClass))
-		{
-			return Weapon;
-		}
-	}
-	return nullptr;
-}
 
 void AMerc_PlayerCharacter::RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass)
 {
@@ -528,10 +498,10 @@ void AMerc_PlayerCharacter::RefillAmmo(TSubclassOf<AMerc_Gun> WeaponClass)
 
 bool AMerc_PlayerCharacter::TryBuyWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
 {
-	if (GetPoints() < Cost)
+	if (StatTrackerComp->GetScore() < Cost)
 		return false;
 
-	AddPoints(-Cost);
+	StatTrackerComp->AddMoney(-Cost);
 	AddWeaponToInventory(WeaponClass, true);
 	return true;
 }
@@ -539,9 +509,9 @@ bool AMerc_PlayerCharacter::TryBuyWeapon_Implementation(TSubclassOf<class AMerc_
 bool AMerc_PlayerCharacter::TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
 {
 	AMerc_Gun* GunIn = GetWeaponByClass(WeaponClass);
-	if (GunIn && GunIn->CanRefillAmmo() && GetPoints() >= Cost)
+	if (GunIn && GunIn->CanRefillAmmo() && StatTrackerComp->GetScore() >= Cost)
 	{
-		AddPoints(-Cost);
+		StatTrackerComp->AddMoney(-Cost);
 		GunIn->Refill();
 		return true;
 	}
