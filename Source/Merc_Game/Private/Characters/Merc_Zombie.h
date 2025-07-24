@@ -4,12 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Structs/DamageZoneTypes.h"
-#include "Interfaces/IHitDamageable.h"
+#include "Characters/Merc_BaseEnemy.h"
 #include "Merc_Zombie.generated.h"
 
 UCLASS()
-class AMerc_Zombie : public ACharacter, public IHitDamageable
+class AMerc_Zombie : public AMerc_BaseEnemy
 {
 	GENERATED_BODY()
 
@@ -26,34 +25,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-
-	// Health
-	UPROPERTY(EditAnywhere, Category = "Stats")
-	float MaxHealth = 100.f;
-
-	UPROPERTY(VisibleAnywhere, Category = "Stats")
-	float CurrentHealth;
-
-	// Movement
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float WalkSpeed = 150.f;
-
-	// Damage range (if needed)
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	float AttackRange = 100.f;
-
-	// Damage
-	//UPROPERTY(EditAnywhere, Category = "Attack")
-	//float Damage = 20.f;
-
-	APawn* TargetPlayer;
-
-	UPROPERTY(EditAnywhere, Category = "Death")
-	UParticleSystem* DeathEffect; // optional: blood/explosion FX
-
-	UPROPERTY()
-	TArray<FDamageZone> DamageZones;
-
 
 	UPROPERTY()
 	UCapsuleComponent* HeadCollider;
@@ -86,35 +57,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
 	float RightLegDamageMultiplier;
 
-	UPROPERTY()
-	AController* LastInstigator = nullptr;
-
-
-public:
-
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	float AttackCooldown = 1.5f;
-
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	float Damage = 20.f;
-
-	UPROPERTY()
-	bool bCanAttack = true;
-
-	FTimerHandle AttackCooldownTimer;
-
-public:
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-
-	void ResetAttackCooldown();
-
-	void Die();
-
-	virtual float GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const override;
 
 protected:
 
-	void InitCapsuleColliders();
-	UCapsuleComponent* CreateZoneCollider(FName Name, FName Bone, FVector Size, float Multiplier);
-	void AddingDamageZones();
+	virtual void InitCapsuleColliders() override;
+	virtual void AddingDamageZones() override;
 };

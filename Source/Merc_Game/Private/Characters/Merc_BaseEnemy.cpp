@@ -107,6 +107,10 @@ float AMerc_BaseEnemy::GetDamageMultiplierFromComponent_Implementation(UPrimitiv
 	return 1.0f;  // Default no-multiplier
 }
 
+/**
+	Override this in child classes to initialize hit capsules on body parts.
+	* Should be called in Constructor.
+	*/
 void AMerc_BaseEnemy::InitCapsuleColliders()
 {
 	// Example implementation — override in child class

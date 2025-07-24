@@ -45,52 +45,15 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	float AttackRange = 100.f;
 
-	// Damage
-	//UPROPERTY(EditAnywhere, Category = "Attack")
-	//float Damage = 20.f;
-
-	APawn* TargetPlayer;
-
 	UPROPERTY(EditAnywhere, Category = "Death")
 	UParticleSystem* DeathEffect; // optional: blood/explosion FX
 
 	UPROPERTY()
 	TArray<FDamageZone> DamageZones;
 
-
-	UPROPERTY()
-	UCapsuleComponent* HeadCollider;
-
-	UPROPERTY()
-	UCapsuleComponent* BodyCollider;
-
-	UPROPERTY()
-	UCapsuleComponent* RightArmCollider;
-
-	UPROPERTY()
-	UCapsuleComponent* LeftArmCollider;
-
-	UPROPERTY()
-	UCapsuleComponent* LeftLegCollider;
-
-	UPROPERTY()
-	UCapsuleComponent* RightLegCollider;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
-	float HeadDamageMultiplier;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
-	float BodyDamageMultiplier;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
-	float RightArmDamageMultiplier;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
-	float LeftArmDamageMultiplier;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
-	float LeftLegDamageMultiplier;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
-	float RightLegDamageMultiplier;
-
 	UPROPERTY()
 	AController* LastInstigator = nullptr;
+	APawn* TargetPlayer;
 
 
 public:
@@ -116,10 +79,8 @@ public:
 	virtual float GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const override;
 
 protected:
-	/* 
-	Override this in child classes to initialize hit capsules on body parts.
-	* Should be called in Constructor. 
-	*/
+	
+	/** Sets the component the Character is walking on, used by CharacterMovement walking movement to be able to follow dynamic objects. */
 	virtual void InitCapsuleColliders();
 
 	/*

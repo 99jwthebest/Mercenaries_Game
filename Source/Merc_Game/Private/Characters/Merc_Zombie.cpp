@@ -25,11 +25,6 @@ void AMerc_Zombie::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentHealth = MaxHealth;
-
-	TargetPlayer = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	
 	AddingDamageZones();
 }
 
@@ -38,73 +33,6 @@ void AMerc_Zombie::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-}
-
-
-float AMerc_Zombie::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	const float DamageApplied = FMath::Min(CurrentHealth, DamageAmount);
-	CurrentHealth -= DamageApplied;
-
-	UE_LOG(LogTemp, Warning, TEXT("Zombie took %f damage. Remaining HP: %f"), DamageApplied, CurrentHealth);
-
-	// Save the instigator for later (used in Die)
-	LastInstigator = EventInstigator;
-
-	if (CurrentHealth <= 0.f)
-	{
-		Die();
-	}
-
-	return DamageApplied;
-}
-
-void AMerc_Zombie::ResetAttackCooldown()
-{
-	bCanAttack = true;
-	UE_LOG(LogTemp, Warning, TEXT("Zombie cooldown reset. Can attack again."));
-}
-
-void AMerc_Zombie::Die()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Zombie died!"));
-
-	// Reward score to killer
-	if (LastInstigator && LastInstigator->GetPawn())
-	{
-		AActor* Killer = LastInstigator->GetPawn(); // Could be player or bot
-
-		if (UStatTrackerComponent* StatTracker = Killer->FindComponentByClass<UStatTrackerComponent>())
-		{
-			// Example: +200 for kill
-			StatTracker->AddScore(200);
-			StatTracker->AddMoney(200);
-			StatTracker->AddKill();  // You can create AddKill() method too
-		}
-	}
-
-	// Optional VFX
-	if (DeathEffect)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), DeathEffect, GetActorLocation());
-	}
-
-	// Disable AI, collision, etc.
-	DetachFromControllerPendingDestroy();
-	SetActorEnableCollision(false);
-	SetLifeSpan(2.0f); // Clean up actor after delay
-}
-
-float AMerc_Zombie::GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const
-{
-	for (const FDamageZone& Zone : DamageZones)
-	{
-		if (Zone.Collider == HitComponent)
-		{
-			return Zone.DamageMultiplier;
-		}
-	}
-	return 1.0f;  // Default no-multiplier
 }
 
 void AMerc_Zombie::InitCapsuleColliders()
@@ -120,23 +48,6 @@ void AMerc_Zombie::InitCapsuleColliders()
 
 	UE_LOG(LogTemp, Warning, TEXT("Final DamageZones.Num = %d"), DamageZones.Num());
 
-}
-
-UCapsuleComponent* AMerc_Zombie::CreateZoneCollider(FName Name, FName Bone, FVector Size, float Multiplier)
-{
-	UCapsuleComponent* Capsule = CreateDefaultSubobject<UCapsuleComponent>(Name);
-	Capsule->SetupAttachment(GetMesh(), Bone);
-	Capsule->InitCapsuleSize(Size.X, Size.Y);
-	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Capsule->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
-
-	FDamageZone Zone;
-	Zone.Collider = Capsule;
-	Zone.DamageMultiplier = Multiplier;
-	//DamageZones.Add(Zone);
-
-	return Capsule;
 }
 
 void AMerc_Zombie::AddingDamageZones()
