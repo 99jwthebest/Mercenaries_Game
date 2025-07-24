@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Characters/Merc_Zombie.h"
+#include "Characters/Merc_BaseEnemy.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AIController.h"
@@ -12,16 +12,15 @@
 
 
 // Sets default values
-AMerc_Zombie::AMerc_Zombie()
+AMerc_BaseEnemy::AMerc_BaseEnemy()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	InitCapsuleColliders();
 }
 
 // Called when the game starts or when spawned
-void AMerc_Zombie::BeginPlay()
+void AMerc_BaseEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -29,19 +28,18 @@ void AMerc_Zombie::BeginPlay()
 
 	TargetPlayer = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	
-	AddingDamageZones();
+
 }
 
 // Called every frame
-void AMerc_Zombie::Tick(float DeltaTime)
+void AMerc_BaseEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
 
-float AMerc_Zombie::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+float AMerc_BaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float DamageApplied = FMath::Min(CurrentHealth, DamageAmount);
 	CurrentHealth -= DamageApplied;
@@ -59,14 +57,16 @@ float AMerc_Zombie::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	return DamageApplied;
 }
 
-void AMerc_Zombie::ResetAttackCooldown()
+void AMerc_BaseEnemy::ResetAttackCooldown()
 {
 	bCanAttack = true;
 	UE_LOG(LogTemp, Warning, TEXT("Zombie cooldown reset. Can attack again."));
 }
 
-void AMerc_Zombie::Die()
+void AMerc_BaseEnemy::Die()
 {
+	if (bIsDead) return;
+	bIsDead = true;
 	UE_LOG(LogTemp, Warning, TEXT("Zombie died!"));
 
 	// Reward score to killer
@@ -95,7 +95,7 @@ void AMerc_Zombie::Die()
 	SetLifeSpan(2.0f); // Clean up actor after delay
 }
 
-float AMerc_Zombie::GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const
+float AMerc_BaseEnemy::GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const
 {
 	for (const FDamageZone& Zone : DamageZones)
 	{
@@ -107,22 +107,20 @@ float AMerc_Zombie::GetDamageMultiplierFromComponent_Implementation(UPrimitiveCo
 	return 1.0f;  // Default no-multiplier
 }
 
-void AMerc_Zombie::InitCapsuleColliders()
+void AMerc_BaseEnemy::InitCapsuleColliders()
 {
+	// Example implementation — override in child class
+/*
 	UE_LOG(LogTemp, Warning, TEXT("InitCapsuleColliders called"));
 
 	HeadCollider = CreateZoneCollider(TEXT("HeadCollider"), TEXT("head"), FVector(10.f, 15.f, 0), 2.0f);
 	BodyCollider = CreateZoneCollider(TEXT("BodyCollider"), TEXT("Spine2"), FVector(20.f, 30.f, 0), 1.0f);
-	LeftArmCollider = CreateZoneCollider(TEXT("LeftArmCollider"), TEXT("LeftArm"), FVector(8.f, 20.f, 0), 0.8f);
-	RightArmCollider = CreateZoneCollider(TEXT("RightArmCollider"), TEXT("RightArm"), FVector(8.f, 20.f, 0), 0.8f);
-	LeftLegCollider = CreateZoneCollider(TEXT("LeftLegCollider"), TEXT("LeftUpLeg"), FVector(10.f, 25.f, 0), 0.7f);
-	RightLegCollider = CreateZoneCollider(TEXT("RightLegCollider"), TEXT("RightUpLeg"), FVector(10.f, 25.f, 0), 0.7f);
 
 	UE_LOG(LogTemp, Warning, TEXT("Final DamageZones.Num = %d"), DamageZones.Num());
-
+*/
 }
 
-UCapsuleComponent* AMerc_Zombie::CreateZoneCollider(FName Name, FName Bone, FVector Size, float Multiplier)
+UCapsuleComponent* AMerc_BaseEnemy::CreateZoneCollider(FName Name, FName Bone, FVector Size, float Multiplier)
 {
 	UCapsuleComponent* Capsule = CreateDefaultSubobject<UCapsuleComponent>(Name);
 	Capsule->SetupAttachment(GetMesh(), Bone);
@@ -139,15 +137,13 @@ UCapsuleComponent* AMerc_Zombie::CreateZoneCollider(FName Name, FName Bone, FVec
 	return Capsule;
 }
 
-void AMerc_Zombie::AddingDamageZones()
+void AMerc_BaseEnemy::AddingDamageZones()
 {
+	// Example implementation — override in child class
+/*
 	DamageZones.Empty();
 	DamageZones.Add({ HeadCollider, HeadDamageMultiplier });
 	DamageZones.Add({ BodyCollider, BodyDamageMultiplier });
-	DamageZones.Add({ LeftArmCollider, LeftArmDamageMultiplier });
-	DamageZones.Add({ RightArmCollider, RightArmDamageMultiplier });
-	DamageZones.Add({ LeftLegCollider, LeftLegDamageMultiplier });
-	DamageZones.Add({ RightLegCollider, RightLegDamageMultiplier });
 
 	UE_LOG(LogTemp, Warning, TEXT("Final DamageZones.Num = %d"), DamageZones.Num());
 
@@ -162,4 +158,6 @@ void AMerc_Zombie::AddingDamageZones()
 			UE_LOG(LogTemp, Error, TEXT("A DamageZone was added with nullptr collider!"));
 		}
 	}
+*/
 }
+

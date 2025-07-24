@@ -6,16 +6,16 @@
 #include "GameFramework/Character.h"
 #include "Structs/DamageZoneTypes.h"
 #include "Interfaces/IHitDamageable.h"
-#include "Merc_Zombie.generated.h"
+#include "Merc_BaseEnemy.generated.h"
 
 UCLASS()
-class AMerc_Zombie : public ACharacter, public IHitDamageable
+class AMerc_BaseEnemy : public ACharacter, public IHitDamageable
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	AMerc_Zombie();
+	AMerc_BaseEnemy();
 
 protected:
 	// Called when the game starts or when spawned
@@ -33,6 +33,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Stats")
 	float CurrentHealth;
+	
+	UPROPERTY(VisibleAnywhere, Category = "State")
+	bool bIsDead = false;
 
 	// Movement
 	UPROPERTY(EditAnywhere, Category = "Movement")
@@ -72,7 +75,7 @@ protected:
 
 	UPROPERTY()
 	UCapsuleComponent* RightLegCollider;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
 	float HeadDamageMultiplier;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
@@ -106,15 +109,29 @@ public:
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
-	void ResetAttackCooldown();
+	virtual void ResetAttackCooldown();
 
-	void Die();
+	virtual void Die();
 
 	virtual float GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const override;
 
 protected:
+	/* 
+	Override this in child classes to initialize hit capsules on body parts.
+	* Should be called in Constructor. 
+	*/
+	virtual void InitCapsuleColliders();
 
-	void InitCapsuleColliders();
+	/*
+	Helper to create a capsule collider with the specified Name, Bone Attachment, Size, and Damage Multiplier.
+	* Not intended for Runtime use.
+	*/
 	UCapsuleComponent* CreateZoneCollider(FName Name, FName Bone, FVector Size, float Multiplier);
-	void AddingDamageZones();
+	
+	/* 
+	Override this in child classes to define damage zones (e.g., head, body, arms).
+	* Should be called in BeginPlay. 
+	*/
+	virtual void AddingDamageZones();
+
 };
