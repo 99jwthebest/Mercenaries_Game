@@ -59,7 +59,7 @@ protected:
 
 
 protected:
-
+	
 	virtual void InitCapsuleColliders() override;
 	virtual void AddingDamageZones() override;
 };

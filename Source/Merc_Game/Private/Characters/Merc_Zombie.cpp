@@ -32,7 +32,7 @@ void AMerc_Zombie::BeginPlay()
 void AMerc_Zombie::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 }
 
 void AMerc_Zombie::InitCapsuleColliders()

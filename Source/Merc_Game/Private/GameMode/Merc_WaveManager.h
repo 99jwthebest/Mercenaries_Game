@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Merc_WaveManager.generated.h"
 
+class AMerc_BaseEnemy;
+
 UCLASS()
 class AMerc_WaveManager : public AActor
 {
@@ -18,19 +20,19 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "Wave")
-	TSubclassOf<class AMerc_Zombie> ZombieClass;
+	UPROPERTY(EditDefaultsOnly, Category = "Wave Settings")
+	TArray<TSubclassOf<AMerc_BaseEnemy>> EnemyTypes;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Wave")
-	int32 ZombiesPerWave = 5;
+	UPROPERTY(EditDefaultsOnly, Category = "Wave Settings")
+	int32 EnemiesPerWave = 5;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Wave")
+	UPROPERTY(EditDefaultsOnly, Category = "Wave Settings")
 	float TimeBetweenSpawns = 1.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Wave")
+	UPROPERTY(EditDefaultsOnly, Category = "Wave Settings")
 	float TimeBetweenWaves = 5.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Spawn")
+	UPROPERTY(EditInstanceOnly, Category = "Wave Settings")
 	TArray<AActor*> SpawnPoints;
 
 private:
@@ -38,14 +40,15 @@ private:
 	FTimerHandle WaveDelayTimerHandle;
 
 	int32 CurrentWave = 0;
-	int32 ZombiesSpawned = 0;
-	int32 ZombiesToSpawn = 0;
+	int32 EnemiesSpawned = 0;
+	int32 EnemiesToSpawn = 0;
 
-	TArray<AMerc_Zombie*> AliveZombies;
+	TArray<AMerc_BaseEnemy*> AliveEnemies;
 
 	void StartWave();
-	void SpawnZombie();
-	void OnZombieDied(AMerc_Zombie* DeadZombie);
+	void SpawnEnemy();
+	UFUNCTION()
+	void OnEnemyDied(AMerc_BaseEnemy* DeadEnemy);
 	void CheckWaveCompletion();
 	FVector GetRandomSpawnPoint();
 

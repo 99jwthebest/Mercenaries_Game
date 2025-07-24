@@ -68,6 +68,7 @@ void AMerc_BaseEnemy::Die()
 	if (bIsDead) return;
 	bIsDead = true;
 	UE_LOG(LogTemp, Warning, TEXT("Zombie died!"));
+	NotifyEnemyDead();
 
 	// Reward score to killer
 	if (LastInstigator && LastInstigator->GetPawn())
@@ -107,10 +108,11 @@ float AMerc_BaseEnemy::GetDamageMultiplierFromComponent_Implementation(UPrimitiv
 	return 1.0f;  // Default no-multiplier
 }
 
-/**
-	Override this in child classes to initialize hit capsules on body parts.
-	* Should be called in Constructor.
-	*/
+void AMerc_BaseEnemy::NotifyEnemyDead()
+{
+	OnEnemyDeath.Broadcast(this);
+}
+
 void AMerc_BaseEnemy::InitCapsuleColliders()
 {
 	// Example implementation — override in child class

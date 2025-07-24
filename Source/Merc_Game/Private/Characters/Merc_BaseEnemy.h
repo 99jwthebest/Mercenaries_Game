@@ -8,6 +8,9 @@
 #include "Interfaces/IHitDamageable.h"
 #include "Merc_BaseEnemy.generated.h"
 
+// Delegate signature: int32 CurrentAmmo, int32 MaxAmmo
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDeath, AMerc_BaseEnemy*, EnemyDied);
+
 UCLASS()
 class AMerc_BaseEnemy : public ACharacter, public IHitDamageable
 {
@@ -69,6 +72,9 @@ public:
 
 	FTimerHandle AttackCooldownTimer;
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnEnemyDeath OnEnemyDeath;
+
 public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
@@ -78,9 +84,14 @@ public:
 
 	virtual float GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const override;
 
+	void NotifyEnemyDead();
+
 protected:
-	
-	/** Sets the component the Character is walking on, used by CharacterMovement walking movement to be able to follow dynamic objects. */
+
+	/**
+	Override this in child classes to initialize hit capsules on body parts.
+	* Should be called in Constructor.
+	*/
 	virtual void InitCapsuleColliders();
 
 	/*

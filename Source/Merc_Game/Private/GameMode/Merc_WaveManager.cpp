@@ -2,6 +2,7 @@
 
 
 #include "GameMode/Merc_WaveManager.h"
+#include "Characters/Merc_BaseEnemy.h"
 
 // Sets default values
 AMerc_WaveManager::AMerc_WaveManager()
@@ -28,17 +29,18 @@ void AMerc_WaveManager::Tick(float DeltaTime)
 void AMerc_WaveManager::StartWave()
 {
 	CurrentWave++;
-	ZombiesToSpawn = ZombiesPerWave * CurrentWave;
-	ZombiesSpawned = 0;
-	AliveZombies.Empty();
+	EnemiesToSpawn = EnemiesPerWave * CurrentWave;
+	EnemiesSpawned = 0;
+	AliveEnemies.Empty();
+	UE_LOG(LogTemp, Error, TEXT("Current Wave: %d"), CurrentWave);
 
-	GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AMerc_WaveManager::SpawnZombie, TimeBetweenSpawns, true);
+	GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &AMerc_WaveManager::SpawnEnemy, TimeBetweenSpawns, true);
 }
 
-void AMerc_WaveManager::SpawnZombie()
+void AMerc_WaveManager::SpawnEnemy()
 {
 	
-	if (ZombiesSpawned >= ZombiesToSpawn)
+	if (EnemiesSpawned >= EnemiesToSpawn)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(SpawnTimerHandle);
 		return;
@@ -47,27 +49,29 @@ void AMerc_WaveManager::SpawnZombie()
 	FVector SpawnLocation = GetRandomSpawnPoint();
 	FRotator SpawnRotation = FRotator::ZeroRotator;
 
-	AMerc_Zombie* NewZombie = GetWorld()->SpawnActor<AMerc_Zombie>(ZombieClass, SpawnLocation, SpawnRotation);
-	if (NewZombie)
+	int32 RandomIndex = FMath::RandRange(0, EnemyTypes.Num() - 1);
+	TSubclassOf<AMerc_BaseEnemy> ChosenType = EnemyTypes[RandomIndex];
+	AMerc_BaseEnemy* NewEnemy = GetWorld()->SpawnActor<AMerc_BaseEnemy>(ChosenType, SpawnLocation, SpawnRotation);
+	if (NewEnemy)
 	{
-		ZombiesSpawned++;
-		AliveZombies.Add(NewZombie);
+		EnemiesSpawned++;
+		AliveEnemies.Add(NewEnemy);
 
 		// Bind the delegate for when the zombie dies
-		//NewZombie->OnDeathDelegate.AddUObject(this, &AMerc_WaveManager::OnZombieDied);
+		NewEnemy->OnEnemyDeath.AddDynamic(this, &AMerc_WaveManager::OnEnemyDied);
 	}
 	
 }
 
-void AMerc_WaveManager::OnZombieDied(AMerc_Zombie* DeadZombie)
+void AMerc_WaveManager::OnEnemyDied(AMerc_BaseEnemy* DeadEnemy)
 {
-	AliveZombies.Remove(DeadZombie);
+	AliveEnemies.Remove(DeadEnemy);
 	CheckWaveCompletion();
 }
 
 void AMerc_WaveManager::CheckWaveCompletion()
 {
-	if (AliveZombies.Num() <= 0 && ZombiesSpawned >= ZombiesToSpawn)
+	if (AliveEnemies.Num() <= 0 && EnemiesSpawned >= EnemiesToSpawn)
 	{
 		GetWorld()->GetTimerManager().SetTimer(WaveDelayTimerHandle, this, &AMerc_WaveManager::StartWave, TimeBetweenWaves, false);
 	}
