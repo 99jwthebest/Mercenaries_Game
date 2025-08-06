@@ -34,5 +34,5 @@ public:
 	void HideWeaponBuyPrompt();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Weapon")
-	void SetNearbyWeaponBuy(class AMerc_WeaponDisplay* NewWeaponDisplay);
+	void SetNearbyInteractable(class AMerc_BaseInteractable* NewInteractable);
 };

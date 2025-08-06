@@ -17,7 +17,7 @@
 #include "Components/TextBlock.h"
 #include "UI/Merc_PlayerHUDWidget.h"
 #include "UI/Merc_WeaponBuyPromptWidget.h"
-#include "Actors/Merc_WeaponDisplay.h"
+#include "Actors/Merc_BaseInteractable.h"
 #include "Components/StatTrackerComponent.h"
 
 
@@ -381,22 +381,9 @@ void AMerc_PlayerCharacter::SwitchWeapon(int32 NewIndex)
 
 void AMerc_PlayerCharacter::TryBuyNearbyWeapon()
 {
-	if (NearbyWeaponBuy && NearbyWeaponBuy->TryPurchase(this))
+	if (NearbyInteractable)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Purchased weapon: %s"), *NearbyWeaponBuy->GetName());
-
-		// Always show updated prompt after purchase (e.g., refill prompt)
-		const bool bAlreadyOwnsWeapon = HasWeapon(NearbyWeaponBuy->GetWeaponClass());
-		if (bAlreadyOwnsWeapon)
-		{
-			ShowWeaponBuyPrompt(NearbyWeaponBuy->GetWeaponName().ToString(), NearbyWeaponBuy->GetWeaponAmmoCost(), true);
-		}
-		else
-		{
-			ShowWeaponBuyPrompt(NearbyWeaponBuy->GetWeaponName().ToString(), NearbyWeaponBuy->GetWeaponCost(), false);
-		}
-
-		// Don't clear NearbyWeaponBuy — player is still in range!
+		NearbyInteractable->Interact(this);
 	}
 }
 
@@ -562,9 +549,9 @@ void AMerc_PlayerCharacter::HideWeaponBuyPrompt_Implementation()
 	}
 }
 
-void AMerc_PlayerCharacter::SetNearbyWeaponBuy_Implementation(AMerc_WeaponDisplay* NewWeaponDisplay)
+void AMerc_PlayerCharacter::SetNearbyInteractable_Implementation(AMerc_BaseInteractable* NewInteractable)
 {
-	NearbyWeaponBuy = NewWeaponDisplay;
+	NearbyInteractable = NewInteractable;
 }
 
 

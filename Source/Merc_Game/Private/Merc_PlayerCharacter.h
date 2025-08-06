@@ -8,7 +8,7 @@
 #include "Merc_PlayerCharacter.generated.h"
 
 class AMerc_Gun;
-class AMerc_WeaponDisplay;
+class AMerc_BaseInteractable;
 class UCameraComponent;
 class UCharacterStateComponent;
 class UInputMappingContext;
@@ -160,7 +160,7 @@ public:
 
 	virtual void HideWeaponBuyPrompt_Implementation() override;
 
-	virtual void SetNearbyWeaponBuy_Implementation(class AMerc_WeaponDisplay* NewWeaponDisplay) override;
+	virtual void SetNearbyInteractable_Implementation(class AMerc_BaseInteractable* NewInteractable) override;
 
 private:
 
@@ -201,7 +201,7 @@ private:
 
 	UMerc_PlayerHUDWidget* PlayerHUD;
 	UPROPERTY()
-	AMerc_WeaponDisplay* NearbyWeaponBuy;
+	AMerc_BaseInteractable* NearbyInteractable;
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UMerc_WeaponBuyPromptWidget> WeaponBuyPromptWidgetClass;
 
