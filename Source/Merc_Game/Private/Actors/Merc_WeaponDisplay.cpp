@@ -3,95 +3,66 @@
 
 #include "Actors/Merc_WeaponDisplay.h"
 #include "Merc_Gun.h"
-#include "Interfaces/IWeaponBuyer.h"
 
 
 // Sets default values
 AMerc_WeaponDisplay::AMerc_WeaponDisplay()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
+    ItemType = EItemType::Weapon;
+    ItemData = WeaponClass; // your weapon TSubclassOf
+    BaseCost = WeaponCost;
+    AltCost = AmmoCost;
 }
 
 void AMerc_WeaponDisplay::OnBeginInteract(AActor* Interactor)
 {
-    if (!Interactor->GetClass()->ImplementsInterface(UWeaponBuyer::StaticClass())) return;
+     if (!Interactor || !Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass())) 
+        return;
 
     LastBuyer = Interactor;
+    IBuyer::Execute_SetNearbyInteractable(Interactor, this);
 
-    IWeaponBuyer::Execute_SetNearbyInteractable(Interactor, this);
-
-    const bool bOwnsWeapon = IWeaponBuyer::Execute_HasWeapon(Interactor, WeaponClass);
-    if (bOwnsWeapon)
-    {
-        IWeaponBuyer::Execute_ShowWeaponBuyPrompt(Interactor, WeaponName, AmmoCost, true);
-    }
-    else
-    {
-        IWeaponBuyer::Execute_ShowWeaponBuyPrompt(Interactor, WeaponName, WeaponCost, false);
-    }
+    // Check if the player already owns this weapon
+    const bool bOwnsWeapon = IBuyer::Execute_HasItem(Interactor, EItemType::Weapon, WeaponClass);
+    IBuyer::Execute_ShowBuyPrompt(Interactor, WeaponName, bOwnsWeapon ? AmmoCost : WeaponCost, bOwnsWeapon);
 }
 
 void AMerc_WeaponDisplay::OnEndInteract(AActor* Interactor)
 {
-    if (!Interactor->GetClass()->ImplementsInterface(UWeaponBuyer::StaticClass())) return;
+    if (!Interactor || !Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
+        return;
 
-    IWeaponBuyer::Execute_SetNearbyInteractable(Interactor, nullptr);
-    IWeaponBuyer::Execute_HideWeaponBuyPrompt(Interactor);
-}
-
-bool AMerc_WeaponDisplay::TryPurchase(AActor* BuyerActor)
-{
-    if (!BuyerActor || !WeaponClass || !BuyerActor->GetClass()->ImplementsInterface(UWeaponBuyer::StaticClass()))
-        return false;
-
-    if (IWeaponBuyer::Execute_HasWeapon(BuyerActor, WeaponClass))
-    {
-        AMerc_Gun* OwnedGun = IWeaponBuyer::Execute_GetWeaponByClass(BuyerActor, WeaponClass);
-        if (OwnedGun && OwnedGun->CanRefillAmmo())
-        {
-            if (IWeaponBuyer::Execute_TryRefillAmmo(BuyerActor, WeaponClass, AmmoCost))
-            {
-                LastBuyer = BuyerActor;
-                return true;
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Ammo is already full. Cannot refill."));
-        }
-
-        return false;
-    }
-
-    if (IWeaponBuyer::Execute_TryBuyWeapon(BuyerActor, WeaponClass, WeaponCost))
-    {
-        LastBuyer = BuyerActor;
-        return true;
-    }
-
-    return false;
+    IBuyer::Execute_SetNearbyInteractable(Interactor, nullptr);
+    IBuyer::Execute_HideBuyPrompt(Interactor);
 }
 
 void AMerc_WeaponDisplay::Interact(AActor* Interactor)
 {
-    if (!Interactor || !Interactor->GetClass()->ImplementsInterface(UWeaponBuyer::StaticClass()))
+    if (!Interactor || !Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
         return;
 
     if (TryPurchase(Interactor))
     {
         UE_LOG(LogTemp, Log, TEXT("Purchase successful: %s"), *GetName());
 
-        const bool bOwnsWeapon = IWeaponBuyer::Execute_HasWeapon(Interactor, WeaponClass);
-        if (bOwnsWeapon)
-        {
-            IWeaponBuyer::Execute_ShowWeaponBuyPrompt(Interactor, WeaponName, AmmoCost, true);
-        }
-        else
-        {
-            IWeaponBuyer::Execute_ShowWeaponBuyPrompt(Interactor, WeaponName, WeaponCost, false);
-        }
+        const bool bOwnsWeapon = IBuyer::Execute_HasItem(Interactor, EItemType::Weapon, WeaponClass);
+        IBuyer::Execute_ShowBuyPrompt(Interactor, WeaponName, bOwnsWeapon ? AmmoCost : WeaponCost, bOwnsWeapon);
+    }
+}
+
+bool AMerc_WeaponDisplay::TryPurchase(AActor* BuyerActor)
+{
+    if (!BuyerActor || !BuyerActor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
+        return false;
+
+    const bool bOwnsWeapon = IBuyer::Execute_HasItem(BuyerActor, EItemType::Weapon, WeaponClass);
+    if (bOwnsWeapon)
+    {
+        return IBuyer::Execute_TryPurchase(BuyerActor, EItemType::Ammo, WeaponClass, AmmoCost);
+    }
+    else
+    {
+        return IBuyer::Execute_TryPurchase(BuyerActor, ItemType, WeaponClass, WeaponCost);
     }
 }
 

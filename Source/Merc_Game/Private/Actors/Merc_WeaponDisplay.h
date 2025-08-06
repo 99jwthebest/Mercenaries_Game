@@ -39,9 +39,10 @@ protected:
     virtual void OnEndInteract(AActor* Interactor) override;
 
 public:
-    bool TryPurchase(AActor* BuyerActor);
     // Player pressed Interact
     virtual void Interact(AActor* Interactor) override;
+    virtual bool TryPurchase(AActor* BuyerActor) override;
+
 
     int32 GetWeaponCost() const { return WeaponCost; }
     int32 GetWeaponAmmoCost() const { return AmmoCost; }

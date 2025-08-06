@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Interfaces/IWeaponBuyer.h"
+#include "Interfaces/IBuyer.h"
 #include "Merc_PlayerCharacter.generated.h"
 
 class AMerc_Gun;
@@ -20,7 +20,7 @@ class UStatTrackerComponent;
 struct FInputActionValue;
 
 UCLASS()
-class AMerc_PlayerCharacter : public ACharacter, public IWeaponBuyer
+class AMerc_PlayerCharacter : public ACharacter, public IBuyer
 {
 	GENERATED_BODY()
 
@@ -137,6 +137,23 @@ public:
 	UFUNCTION()
 	void OnAmmoChanged(int32 CurrentAmmo, int32 MaxAmmo);
 
+	/** Returns true if the player already owns this perk */
+	UFUNCTION(BlueprintCallable, Category = "Perks")
+	bool HasPerk(FName PerkID) const;
+	/** Grants the player a perk */
+	UFUNCTION(BlueprintCallable, Category = "Perks")
+	void AddPerk(FName PerkID);
+	/** Removes a perk (useful if perks are lost on death) */
+	UFUNCTION(BlueprintCallable, Category = "Perks")
+	void RemovePerk(FName PerkID);
+	/** Clears all perks (e.g., on player death) */
+	UFUNCTION(BlueprintCallable, Category = "Perks")
+	void ClearPerks();
+	/** Logic for what each perk actually does */
+	void ApplyPerkEffect(FName PerkID);
+	/** Logic for undoing the perk effects */
+	void RemovePerkEffect(FName PerkID);
+
 	void ShowWeaponBuyPrompt(FString WeaponName, int32 Cost, bool bIsRefill);
 
 	UFUNCTION()
@@ -148,19 +165,21 @@ public:
 
 	bool HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const;
 
-	virtual bool TryBuyWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost) override;
+	virtual bool TryPurchase_Implementation(EItemType ItemType, UObject* ItemData, int32 Cost) override;
 
-	virtual bool TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost) override;
+	virtual bool HasItem_Implementation(EItemType ItemType, UObject* ItemData) const override;
 
-	virtual bool HasWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass) const override;
+	bool TryRefillAmmo(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost);
 
-	virtual class AMerc_Gun* GetWeaponByClass_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass) override;
+	class AMerc_Gun* GetWeaponByClass(TSubclassOf<class AMerc_Gun> WeaponClass);
 
-	virtual void ShowWeaponBuyPrompt_Implementation(const FString& WeaponName, int32 Cost, bool bIsRefill) override;
+	virtual void ShowBuyPrompt_Implementation(const FString& ItemName, int32 Cost, bool bIsRefill) override;
 
-	virtual void HideWeaponBuyPrompt_Implementation() override;
+	virtual void HideBuyPrompt_Implementation() override;
 
 	virtual void SetNearbyInteractable_Implementation(class AMerc_BaseInteractable* NewInteractable) override;
+
+
 
 private:
 
@@ -211,5 +230,14 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stats, meta = (AllowPrivateAccess = "true"))
 	UStatTrackerComponent* StatTrackerComp;
+
+protected:
+	/** Max number of perks a player can hold */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Perks")
+	int32 MaxPerks = 4;
+
+	/** Currently owned perks */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Perks")
+	TArray<FName> OwnedPerks;
 
 };

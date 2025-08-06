@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Enums/ItemType.h"
+#include "Interfaces/IBuyer.h"
 #include "Merc_BaseInteractable.generated.h"
 
 class UBoxComponent;
@@ -33,9 +35,6 @@ protected:
 
 	// Interaction settings
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
-	int32 Cost = 500;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
 	FString InteractionName = "Interactable";
 
 	// Is player in range
@@ -49,10 +48,12 @@ protected:
 	UPROPERTY()
 	TWeakObjectPtr<AActor> LastInteractor;
 
-public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction")
+	EItemType ItemType;
+	UObject* ItemData = nullptr; // e.g., Weapon class, Perk data, Door reference
+	int32 BaseCost = 0;
+	int32 AltCost = 0; // e.g., refill cost
 
-	// Player pressed Interact
-	virtual void Interact(AActor* Interactor);
 
 protected:
 
@@ -72,4 +73,11 @@ protected:
 
 	UFUNCTION()
 	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+public:
+
+	// Player pressed Interact
+	virtual void Interact(AActor* Interactor);
+
+	virtual bool TryPurchase(AActor* BuyerActor);
 };

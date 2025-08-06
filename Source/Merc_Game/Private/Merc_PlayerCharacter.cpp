@@ -470,19 +470,77 @@ bool AMerc_PlayerCharacter::HasWeapon(TSubclassOf<AMerc_Gun> WeaponClass) const
 	return false;
 }
 
-bool AMerc_PlayerCharacter::TryBuyWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
+bool AMerc_PlayerCharacter::TryPurchase_Implementation(EItemType ItemType, UObject* ItemData, int32 Cost)
 {
-	if (StatTrackerComp->GetMoney() < Cost)
+	if (!StatTrackerComp || StatTrackerComp->GetMoney() < Cost)
 		return false;
 
+	switch (ItemType)
+	{
+		case EItemType::Weapon:
+		{
+			TSubclassOf<AMerc_Gun> GunClassIn = Cast<UClass>(ItemData);
+			if (!GunClassIn) 
+				return false;
+
+			AddWeaponToInventory(GunClassIn, true);
+			break;
+		}
+		case EItemType::Ammo:
+		{
+			TSubclassOf<AMerc_Gun> GunClassIn = Cast<UClass>(ItemData);
+			if (!GunClassIn) 
+				return false;
+
+			return TryRefillAmmo(GunClassIn, Cost);
+			break;
+		}
+		case EItemType::Perk:
+		{
+			FName* PerkIDPtr = (FName*)ItemData;
+			if (!PerkIDPtr) return false;
+
+			// Already have perk?
+			if (HasPerk(*PerkIDPtr))
+				return false;
+
+			// Perk limit reached?
+			if (OwnedPerks.Num() >= MaxPerks)
+				return false;
+
+			// Deduct money & add perk
+			StatTrackerComp->AddMoney(-Cost);
+			AddPerk(*PerkIDPtr);
+
+			return true;
+			break;
+		}
+		case EItemType::Door:
+			//UnlockDoor(ItemData); // Your door unlock logic
+			break;
+
+		default:
+			return false;
+	}
+
 	StatTrackerComp->AddMoney(-Cost);
-	AddWeaponToInventory(WeaponClass, true);
 	return true;
 }
 
-bool AMerc_PlayerCharacter::TryRefillAmmo_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
+bool AMerc_PlayerCharacter::HasItem_Implementation(EItemType ItemType, UObject* ItemData) const
 {
-	AMerc_Gun* GunIn = Execute_GetWeaponByClass(this, WeaponClass);
+	if (ItemType == EItemType::Weapon)
+	{
+		TSubclassOf<AMerc_Gun> GunClassIn = Cast<UClass>(ItemData);
+		return HasWeapon(GunClassIn);
+	}
+	// Perk & door checks here...
+	return false;
+}
+
+bool AMerc_PlayerCharacter::TryRefillAmmo(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
+{
+	AMerc_Gun* GunIn = GetWeaponByClass(WeaponClass);
 	if (GunIn && GunIn->CanRefillAmmo() && StatTrackerComp->GetMoney() >= Cost)
 	{
 		StatTrackerComp->AddMoney(-Cost);
@@ -493,19 +551,8 @@ bool AMerc_PlayerCharacter::TryRefillAmmo_Implementation(TSubclassOf<class AMerc
 	return false;
 }
 
-bool AMerc_PlayerCharacter::HasWeapon_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass) const
-{
-	for (AMerc_Gun* GunIn : Weapons)
-	{
-		if (GunIn && GunIn->IsA(WeaponClass))
-		{
-			return true;
-		}
-	}
-	return false;
-}
 
-AMerc_Gun* AMerc_PlayerCharacter::GetWeaponByClass_Implementation(TSubclassOf<class AMerc_Gun> WeaponClass)
+AMerc_Gun* AMerc_PlayerCharacter::GetWeaponByClass(TSubclassOf<class AMerc_Gun> WeaponClass)
 {
 	for (AMerc_Gun* Weapon : Weapons)
 	{
@@ -517,31 +564,23 @@ AMerc_Gun* AMerc_PlayerCharacter::GetWeaponByClass_Implementation(TSubclassOf<cl
 	return nullptr;
 }
 
-void AMerc_PlayerCharacter::ShowWeaponBuyPrompt_Implementation(const FString& WeaponName, int32 Cost, bool bIsRefill)
+void AMerc_PlayerCharacter::ShowBuyPrompt_Implementation(const FString& ItemName, int32 Cost, bool bIsRefill)
 {
 	if (WeaponBuyPromptWidget)
 	{
-		FString Prompt;
-
-		if (bIsRefill)
-		{
-			Prompt = FString::Printf(TEXT("[E] Refill %s Ammo - %d Points"), *WeaponName, Cost);
-		}
-		else
-		{
-			Prompt = FString::Printf(TEXT("[E] Buy %s - %d Points"), *WeaponName, Cost);
-		}
+		FString Prompt = bIsRefill
+			? FString::Printf(TEXT("[E] Refill %s - %d Points"), *ItemName, Cost)
+			: FString::Printf(TEXT("[E] Buy %s - %d Points"), *ItemName, Cost);
 
 		if (UMerc_WeaponBuyPromptWidget* PromptWidget = Cast<UMerc_WeaponBuyPromptWidget>(WeaponBuyPromptWidget))
 		{
 			PromptWidget->SetPromptText(Prompt);
 		}
-
 		WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
-void AMerc_PlayerCharacter::HideWeaponBuyPrompt_Implementation()
+void AMerc_PlayerCharacter::HideBuyPrompt_Implementation()
 {
 	if (WeaponBuyPromptWidget)
 	{
@@ -575,4 +614,64 @@ void AMerc_PlayerCharacter::OnAmmoChanged(int32 CurrentAmmo, int32 MaxAmmo)
 {
 	if (PlayerHUD)
 		PlayerHUD->UpdateAmmo(CurrentAmmo, MaxAmmo);
+}
+
+bool AMerc_PlayerCharacter::HasPerk(FName PerkID) const
+{
+	return OwnedPerks.Contains(PerkID);
+}
+
+void AMerc_PlayerCharacter::AddPerk(FName PerkID)
+{
+	if (!OwnedPerks.Contains(PerkID) && OwnedPerks.Num() < MaxPerks)
+	{
+		OwnedPerks.Add(PerkID);
+		ApplyPerkEffect(PerkID);
+	}
+}
+
+void AMerc_PlayerCharacter::RemovePerk(FName PerkID)
+{
+	if (OwnedPerks.Remove(PerkID) > 0)
+	{
+		RemovePerkEffect(PerkID);
+	}
+}
+
+void AMerc_PlayerCharacter::ClearPerks()
+{
+	for (FName PerkID : OwnedPerks)
+	{
+		RemovePerkEffect(PerkID);
+	}
+	OwnedPerks.Empty();
+}
+
+void AMerc_PlayerCharacter::ApplyPerkEffect(FName PerkID)
+{
+	if (PerkID == "Juggernog")
+	{
+		MaxHealth += 100.f;
+		CurrentHealth = MaxHealth;
+	}
+	else if (PerkID == "SpeedCola")
+	{
+		//ReloadSpeedMultiplier = 0.5f;
+	}
+	// Add more perk logic here...
+}
+
+void AMerc_PlayerCharacter::RemovePerkEffect(FName PerkID)
+{
+	if (PerkID == "Juggernog")
+	{
+		MaxHealth -= 100.f;
+		if (CurrentHealth > MaxHealth)
+			CurrentHealth = MaxHealth;
+	}
+	else if (PerkID == "SpeedCola")
+	{
+		//ReloadSpeedMultiplier = 1.0f;
+	}
+	// Undo more perk effects here...
 }

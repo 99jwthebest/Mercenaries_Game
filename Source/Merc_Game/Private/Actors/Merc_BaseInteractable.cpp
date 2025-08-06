@@ -9,7 +9,7 @@
 AMerc_BaseInteractable::AMerc_BaseInteractable()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	// Root
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
@@ -62,4 +62,12 @@ void AMerc_BaseInteractable::Interact(AActor* Interactor)
 	UE_LOG(LogTemp, Log, TEXT("%s interacted with %s"),
 		Interactor ? *Interactor->GetName() : TEXT("Unknown"),
 		*GetName());
+}
+
+bool AMerc_BaseInteractable::TryPurchase(AActor* BuyerActor)
+{
+	if (!BuyerActor || !BuyerActor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
+		return false;
+
+	return IBuyer::Execute_TryPurchase(BuyerActor, ItemType, ItemData, BaseCost);
 }
