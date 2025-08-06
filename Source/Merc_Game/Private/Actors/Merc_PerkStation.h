@@ -6,9 +6,8 @@
 #include "Actors/Merc_BaseInteractable.h"
 #include "Merc_PerkStation.generated.h"
 
-/**
- * 
- */
+class UPerkDataAsset;
+
 UCLASS()
 class AMerc_PerkStation : public AMerc_BaseInteractable
 {
@@ -18,15 +17,9 @@ public:
 	AMerc_PerkStation();
 
 protected:
-	/** ID or class reference for this perk */
+	// The perk this station sells
 	UPROPERTY(EditAnywhere, Category = "Perk")
-	FName PerkID; // "Juggernog", "SpeedCola", etc.
-
-	UPROPERTY(EditAnywhere, Category = "Perk")
-	FString PerkName = "Perk";
-
-	UPROPERTY(EditAnywhere, Category = "Perk")
-	int32 PerkCost = 2000;
+	UPerkDataAsset* PerkData;
 
 	UPROPERTY()
 	TWeakObjectPtr<AActor> LastBuyer;
@@ -39,7 +32,7 @@ public:
 	virtual void Interact(AActor* Interactor) override;
 	virtual bool TryPurchase(AActor* BuyerActor) override;
 
-	FName GetPerkID() const { return PerkID; }
-	int32 GetPerkCost() const { return PerkCost; }
-	FString GetPerkName() const { return PerkName; }
+	//FName GetPerkID() const { return PerkID; }
+	//int32 GetPerkCost() const { return PerkCost; }
+	//FString GetPerkName() const { return PerkName; }
 };

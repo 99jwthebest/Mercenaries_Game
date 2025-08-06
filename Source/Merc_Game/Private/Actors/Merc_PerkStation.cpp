@@ -2,12 +2,13 @@
 
 
 #include "Actors/Merc_PerkStation.h"
+#include "DataAssets/PerkDataAsset.h"
+
 
 AMerc_PerkStation::AMerc_PerkStation()
 {
 	ItemType = EItemType::Perk;
-	ItemData = &PerkID; // You could later pass a Perk Data Asset instead of nullptr
-	BaseCost = PerkCost;
+	ItemData = PerkData; // Will be set in editor
 }
 
 void AMerc_PerkStation::OnBeginInteract(AActor* Interactor)
@@ -18,9 +19,14 @@ void AMerc_PerkStation::OnBeginInteract(AActor* Interactor)
 	LastBuyer = Interactor;
 	IBuyer::Execute_SetNearbyInteractable(Interactor, this);
 
-	// Check if player already has this perk
-	const bool bHasPerk = IBuyer::Execute_HasItem(Interactor, EItemType::Perk, nullptr /* PerkData or ID */);
-	IBuyer::Execute_ShowBuyPrompt(Interactor, PerkName, PerkCost, bHasPerk);
+	// Always show perk name and cost
+	if (PerkData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Juggernaug!!!!!!"));
+
+		const bool bAlreadyHasPerk = IBuyer::Execute_HasItem(Interactor, EItemType::Perk, PerkData);
+		IBuyer::Execute_ShowBuyPrompt(Interactor, PerkData->DisplayName, PerkData->Cost, bAlreadyHasPerk);
+	}
 }
 
 void AMerc_PerkStation::OnEndInteract(AActor* Interactor)
@@ -34,17 +40,30 @@ void AMerc_PerkStation::OnEndInteract(AActor* Interactor)
 
 void AMerc_PerkStation::Interact(AActor* Interactor)
 {
-	if (!Interactor || !Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
+	if (!Interactor || !Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass()) || !PerkData)
 		return;
 
 	if (TryPurchase(Interactor))
 	{
-		UE_LOG(LogTemp, Log, TEXT("Perk purchased: %s"), *PerkName);
-		IBuyer::Execute_ShowBuyPrompt(Interactor, PerkName, PerkCost, true);
+		UE_LOG(LogTemp, Log, TEXT("Perk purchased: %s"), *PerkData->DisplayName);
+
+		const bool bHasPerk = IBuyer::Execute_HasItem(Interactor, EItemType::Perk, PerkData);
+		IBuyer::Execute_ShowBuyPrompt(Interactor, PerkData->DisplayName, PerkData->Cost, bHasPerk);
 	}
 }
 
 bool AMerc_PerkStation::TryPurchase(AActor* BuyerActor)
 {
-	return false;
+	if (!BuyerActor || !BuyerActor->GetClass()->ImplementsInterface(UBuyer::StaticClass()) || !PerkData)
+		return false;
+
+	// If they already have this perk, don't buy again
+	if (IBuyer::Execute_HasItem(BuyerActor, EItemType::Perk, PerkData))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player already owns perk: %s"), *PerkData->DisplayName);
+		return false;
+	}
+
+	// Try to purchase the perk
+	return IBuyer::Execute_TryPurchase(BuyerActor, EItemType::Perk, PerkData, PerkData->Cost);
 }

@@ -19,6 +19,7 @@
 #include "UI/Merc_WeaponBuyPromptWidget.h"
 #include "Actors/Merc_BaseInteractable.h"
 #include "Components/StatTrackerComponent.h"
+#include "DataAssets/PerkDataAsset.h"
 
 
 // Sets default values
@@ -497,22 +498,25 @@ bool AMerc_PlayerCharacter::TryPurchase_Implementation(EItemType ItemType, UObje
 		}
 		case EItemType::Perk:
 		{
-			FName* PerkIDPtr = (FName*)ItemData;
-			if (!PerkIDPtr) return false;
-
-			// Already have perk?
-			if (HasPerk(*PerkIDPtr))
+			UPerkDataAsset* Data = Cast<UPerkDataAsset>(ItemData);
+			if (!Data) 
 				return false;
 
-			// Perk limit reached?
-			if (OwnedPerks.Num() >= MaxPerks)
+			if (Execute_HasItem(this, EItemType::Perk, Data))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Already have perk: %s"), *Data->DisplayName);
 				return false;
+			}
 
-			// Deduct money & add perk
-			StatTrackerComp->AddMoney(-Cost);
-			AddPerk(*PerkIDPtr);
+			// Example perk limit
+			if (OwnedPerks.Num() >= 4)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Perk limit reached"));
+				return false;
+			}
 
-			return true;
+			OwnedPerks.Add(Data->PerkID);
+			UE_LOG(LogTemp, Log, TEXT("Gained perk: %s"), *Data->DisplayName);
 			break;
 		}
 		case EItemType::Door:
@@ -534,7 +538,16 @@ bool AMerc_PlayerCharacter::HasItem_Implementation(EItemType ItemType, UObject* 
 		TSubclassOf<AMerc_Gun> GunClassIn = Cast<UClass>(ItemData);
 		return HasWeapon(GunClassIn);
 	}
-	// Perk & door checks here...
+	if (ItemType == EItemType::Perk)
+	{
+		const UPerkDataAsset* Data = Cast<UPerkDataAsset>(ItemData);
+		if (!Data) 
+			return false;
+
+		return OwnedPerks.Contains(Data->PerkID);
+	}
+
+	// Door or other checks here...
 	return false;
 }
 
