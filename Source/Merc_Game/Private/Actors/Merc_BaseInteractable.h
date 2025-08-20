@@ -54,11 +54,16 @@ protected:
 	int32 BaseCost = 0;
 	int32 AltCost = 0; // e.g., refill cost
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction|Prompt")
+	FString PrimaryPrompt = "Interact";
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interaction|Prompt")
+	FString SecondaryPrompt; // optional
+
 
 protected:
 
 	// Return the prompt string
-	virtual FString GetInteractionPrompt(AActor* Interactor) const { return InteractionName; }
+	virtual FString GetInteractionName(AActor* Interactor) const { return InteractionName; }
 
 
 	/** Called when an actor enters range — child classes override */
@@ -80,4 +85,8 @@ public:
 	virtual void Interact(AActor* Interactor);
 
 	virtual bool TryPurchase(AActor* BuyerActor);
+	
+	virtual FString GetInteractionPrompt(AActor* Interactor) const;
+
 };
+

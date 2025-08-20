@@ -24,8 +24,7 @@ void AMerc_PerkStation::OnBeginInteract(AActor* Interactor)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Juggernaug!!!!!!"));
 
-		const bool bAlreadyHasPerk = IBuyer::Execute_HasItem(Interactor, EItemType::Perk, PerkData);
-		IBuyer::Execute_ShowBuyPrompt(Interactor, PerkData->DisplayName, PerkData->Cost, bAlreadyHasPerk);
+		IBuyer::Execute_ShowBuyPrompt(Interactor, this); // Pass the station itself
 	}
 }
 
@@ -47,8 +46,7 @@ void AMerc_PerkStation::Interact(AActor* Interactor)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Perk purchased: %s"), *PerkData->DisplayName);
 
-		const bool bHasPerk = IBuyer::Execute_HasItem(Interactor, EItemType::Perk, PerkData);
-		IBuyer::Execute_ShowBuyPrompt(Interactor, PerkData->DisplayName, PerkData->Cost, bHasPerk);
+		IBuyer::Execute_ShowBuyPrompt(Interactor, this); // Pass the station itself
 	}
 }
 
@@ -66,4 +64,25 @@ bool AMerc_PerkStation::TryPurchase(AActor* BuyerActor)
 
 	// Try to purchase the perk
 	return IBuyer::Execute_TryPurchase(BuyerActor, EItemType::Perk, PerkData, PerkData->Cost);
+}
+
+FString AMerc_PerkStation::GetInteractionPrompt(AActor* Interactor) const
+{
+	if (!Interactor)
+		return PrimaryPrompt;
+
+	if (!Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
+		return PrimaryPrompt;
+
+	// Check if the player already has the perk
+	const bool bHasPerk = IBuyer::Execute_HasItem(Interactor, EItemType::Perk, PerkData);
+
+	if (bHasPerk)
+	{
+		// If you want a second prompt, use it; otherwise, hide the prompt
+		return !SecondaryPrompt.IsEmpty() ? SecondaryPrompt : FString("");
+	}
+
+	// Default prompt (buy the perk)
+	return PrimaryPrompt;
 }

@@ -32,6 +32,8 @@ public:
 	virtual void Interact(AActor* Interactor) override;
 	virtual bool TryPurchase(AActor* BuyerActor) override;
 
+	virtual FString GetInteractionPrompt(AActor* Interactor) const override;
+
 	//FName GetPerkID() const { return PerkID; }
 	//int32 GetPerkCost() const { return PerkCost; }
 	//FString GetPerkName() const { return PerkName; }

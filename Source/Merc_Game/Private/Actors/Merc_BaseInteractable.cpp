@@ -71,3 +71,27 @@ bool AMerc_BaseInteractable::TryPurchase(AActor* BuyerActor)
 
 	return IBuyer::Execute_TryPurchase(BuyerActor, ItemType, ItemData, BaseCost);
 }
+
+FString AMerc_BaseInteractable::GetInteractionPrompt(AActor* Interactor) const
+{
+	if (!Interactor)
+		return PrimaryPrompt;
+
+	if (!Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
+		return PrimaryPrompt;
+
+	const bool bAlreadyHasItem = IBuyer::Execute_HasItem(Interactor, ItemType, ItemData);
+
+	if (bAlreadyHasItem)
+	{
+		if (!SecondaryPrompt.IsEmpty())
+			return SecondaryPrompt;
+		else
+			return ""; // Hide prompt if nothing to show
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("BuggerNaugh Is glicthing!!!"));
+
+	return PrimaryPrompt;
+}
+

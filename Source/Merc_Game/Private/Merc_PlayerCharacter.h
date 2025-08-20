@@ -173,7 +173,7 @@ public:
 
 	class AMerc_Gun* GetWeaponByClass(TSubclassOf<class AMerc_Gun> WeaponClass);
 
-	virtual void ShowBuyPrompt_Implementation(const FString& ItemName, int32 Cost, bool bIsRefill) override;
+	virtual void ShowBuyPrompt_Implementation(AMerc_BaseInteractable* Interactable) override;
 
 	virtual void HideBuyPrompt_Implementation() override;
 
@@ -239,5 +239,9 @@ protected:
 	/** Currently owned perks */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Perks")
 	TArray<FName> OwnedPerks;
+
+	// Tracks doors the player has bought
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	TSet<FName> PurchasedDoors;
 
 };

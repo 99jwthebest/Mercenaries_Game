@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Actors/Merc_WeaponDisplay.h"
 #include "Merc_Gun.h"
 
@@ -22,9 +21,7 @@ void AMerc_WeaponDisplay::OnBeginInteract(AActor* Interactor)
     LastBuyer = Interactor;
     IBuyer::Execute_SetNearbyInteractable(Interactor, this);
 
-    // Check if the player already owns this weapon
-    const bool bOwnsWeapon = IBuyer::Execute_HasItem(Interactor, EItemType::Weapon, WeaponClass);
-    IBuyer::Execute_ShowBuyPrompt(Interactor, WeaponName, bOwnsWeapon ? AmmoCost : WeaponCost, bOwnsWeapon);
+    IBuyer::Execute_ShowBuyPrompt(Interactor, this); // Pass the station itself
 }
 
 void AMerc_WeaponDisplay::OnEndInteract(AActor* Interactor)
@@ -39,15 +36,14 @@ void AMerc_WeaponDisplay::OnEndInteract(AActor* Interactor)
 void AMerc_WeaponDisplay::Interact(AActor* Interactor)
 {
     if (!Interactor || !Interactor->GetClass()->ImplementsInterface(UBuyer::StaticClass()))
-        return;
+		return;
 
-    if (TryPurchase(Interactor))
-    {
-        UE_LOG(LogTemp, Log, TEXT("Purchase successful: %s"), *GetName());
+	if (TryPurchase(Interactor))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Purchase successful: %s"), *GetName());
 
-        const bool bOwnsWeapon = IBuyer::Execute_HasItem(Interactor, EItemType::Weapon, WeaponClass);
-        IBuyer::Execute_ShowBuyPrompt(Interactor, WeaponName, bOwnsWeapon ? AmmoCost : WeaponCost, bOwnsWeapon);
-    }
+        IBuyer::Execute_ShowBuyPrompt(Interactor, this); // Pass the station itself
+	}
 }
 
 bool AMerc_WeaponDisplay::TryPurchase(AActor* BuyerActor)
@@ -64,5 +60,19 @@ bool AMerc_WeaponDisplay::TryPurchase(AActor* BuyerActor)
     {
         return IBuyer::Execute_TryPurchase(BuyerActor, ItemType, WeaponClass, WeaponCost);
     }
+}
+
+FString AMerc_WeaponDisplay::GetInteractionPrompt(AActor* Interactor) const
+{
+    if (!Interactor) 
+        return PrimaryPrompt;
+
+    const bool bOwnsWeapon = IBuyer::Execute_HasItem(Interactor, EItemType::Weapon, WeaponClass);
+    if (bOwnsWeapon)
+    {
+        return !SecondaryPrompt.IsEmpty() ? SecondaryPrompt : FString::Printf(TEXT("Refill %s"), *WeaponName);
+    }
+
+    return PrimaryPrompt;
 }
 

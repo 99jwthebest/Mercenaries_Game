@@ -22,7 +22,7 @@ public:
     bool HasItem(EItemType ItemType, UObject* ItemData) const;
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Buying")
-    void ShowBuyPrompt(const FString& ItemName, int32 Cost, bool bIsRefill);
+    void ShowBuyPrompt(AMerc_BaseInteractable* Interactable);
 
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Buying")
     void HideBuyPrompt();

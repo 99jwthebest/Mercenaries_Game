@@ -533,22 +533,31 @@ bool AMerc_PlayerCharacter::TryPurchase_Implementation(EItemType ItemType, UObje
 
 bool AMerc_PlayerCharacter::HasItem_Implementation(EItemType ItemType, UObject* ItemData) const
 {
-	if (ItemType == EItemType::Weapon)
+	switch (ItemType)
 	{
-		TSubclassOf<AMerc_Gun> GunClassIn = Cast<UClass>(ItemData);
-		return HasWeapon(GunClassIn);
-	}
-	if (ItemType == EItemType::Perk)
-	{
-		const UPerkDataAsset* Data = Cast<UPerkDataAsset>(ItemData);
-		if (!Data) 
+		case EItemType::Weapon:
+		{
+			TSubclassOf<AMerc_Gun> GunClassIn = Cast<UClass>(ItemData);
+			return HasWeapon(GunClassIn);
+		}
+		case EItemType::Perk:
+		{
+			const UPerkDataAsset* Data = Cast<UPerkDataAsset>(ItemData);
+			if (!Data) 
+				return false;
+			return OwnedPerks.Contains(Data->PerkID);
+		}
+		case EItemType::Door:
+		{
+			if (AActor* DoorActor = Cast<AActor>(ItemData))
+			{
+				return PurchasedDoors.Contains(DoorActor->GetFName());
+			}
 			return false;
-
-		return OwnedPerks.Contains(Data->PerkID);
+		}
+		default:
+			return false;
 	}
-
-	// Door or other checks here...
-	return false;
 }
 
 bool AMerc_PlayerCharacter::TryRefillAmmo(TSubclassOf<class AMerc_Gun> WeaponClass, int32 Cost)
@@ -577,9 +586,9 @@ AMerc_Gun* AMerc_PlayerCharacter::GetWeaponByClass(TSubclassOf<class AMerc_Gun> 
 	return nullptr;
 }
 
-void AMerc_PlayerCharacter::ShowBuyPrompt_Implementation(const FString& ItemName, int32 Cost, bool bIsRefill)
+void AMerc_PlayerCharacter::ShowBuyPrompt_Implementation(AMerc_BaseInteractable* Interactable)
 {
-	if (WeaponBuyPromptWidget)
+	/*if (WeaponBuyPromptWidget)
 	{
 		FString Prompt = bIsRefill
 			? FString::Printf(TEXT("[E] Refill %s - %d Points"), *ItemName, Cost)
@@ -590,6 +599,26 @@ void AMerc_PlayerCharacter::ShowBuyPrompt_Implementation(const FString& ItemName
 			PromptWidget->SetPromptText(Prompt);
 		}
 		WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Visible);
+	}*/
+
+	if (!WeaponBuyPromptWidget || !Interactable)
+		return;
+
+	if (AMerc_BaseInteractable* Base = Cast<AMerc_BaseInteractable>(Interactable))
+	{
+		FString Prompt = Base->GetInteractionPrompt(this);
+		if (!Prompt.IsEmpty())
+		{
+			if (UMerc_WeaponBuyPromptWidget* PromptWidget = Cast<UMerc_WeaponBuyPromptWidget>(WeaponBuyPromptWidget))
+			{
+				PromptWidget->SetPromptText(Prompt);
+			}
+			WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+		else
+		{
+			WeaponBuyPromptWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }
 

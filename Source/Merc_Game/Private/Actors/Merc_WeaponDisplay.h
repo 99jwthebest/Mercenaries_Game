@@ -42,6 +42,8 @@ public:
     // Player pressed Interact
     virtual void Interact(AActor* Interactor) override;
     virtual bool TryPurchase(AActor* BuyerActor) override;
+    virtual FString GetInteractionPrompt(AActor* Interactor) const override;
+
 
 
     int32 GetWeaponCost() const { return WeaponCost; }
