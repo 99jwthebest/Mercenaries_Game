@@ -520,7 +520,20 @@ bool AMerc_PlayerCharacter::TryPurchase_Implementation(EItemType ItemType, UObje
 			break;
 		}
 		case EItemType::Door:
-			//UnlockDoor(ItemData); // Your door unlock logic
+			if (AActor* DoorActor = Cast<AActor>(ItemData))
+			{
+				if (PurchasedDoors.Contains(DoorActor->GetFName()))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Already owns door: %s"), *DoorActor->GetName());
+					return false;
+				}
+
+				PurchasedDoors.Add(DoorActor->GetFName());
+			}
+			else
+			{
+				return false;
+			}
 			break;
 
 		default:

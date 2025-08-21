@@ -30,6 +30,8 @@ AMerc_BaseInteractable::AMerc_BaseInteractable()
 
 void AMerc_BaseInteractable::BeginPlay()
 {
+	Super::BeginPlay();
+
 	// Bind overlap events
 	TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &AMerc_BaseInteractable::OnOverlapBegin);
 	TriggerBox->OnComponentEndOverlap.AddDynamic(this, &AMerc_BaseInteractable::OnOverlapEnd);
