@@ -13,6 +13,7 @@ class UCameraComponent;
 class UCharacterStateComponent;
 class UInputMappingContext;
 class UInputAction;
+class UMerc_MeleeComponent;
 class UMerc_PlayerHUDWidget;
 class UMerc_WeaponBuyPromptWidget;
 class USpringArmComponent;
@@ -76,6 +77,10 @@ class AMerc_PlayerCharacter : public ACharacter, public IBuyer
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* InteractAction;
 
+	/** Melee Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* MeleeAction;
+
 public:
 	// Sets default values for this character's properties
 	AMerc_PlayerCharacter();
@@ -121,6 +126,7 @@ protected:
 	void InitWeapons();
 	void SwitchWeapon(int32 NewIndex);
 	void TryBuyNearbyWeapon();
+	void Melee();
 
 public:
 
@@ -230,6 +236,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stats, meta = (AllowPrivateAccess = "true"))
 	UStatTrackerComponent* StatTrackerComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	UMerc_MeleeComponent* MeleeComp;
 
 protected:
 	/** Max number of perks a player can hold */

@@ -19,6 +19,7 @@
 #include "UI/Merc_WeaponBuyPromptWidget.h"
 #include "Actors/Merc_BaseInteractable.h"
 #include "Components/StatTrackerComponent.h"
+#include "Components/Merc_MeleeComponent.h"
 #include "DataAssets/PerkDataAsset.h"
 
 
@@ -64,6 +65,7 @@ AMerc_PlayerCharacter::AMerc_PlayerCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 	CharacterStateComp = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("Character State Component"));
 	StatTrackerComp = CreateDefaultSubobject<UStatTrackerComponent>(TEXT("StatTracker"));
+	MeleeComp = CreateDefaultSubobject<UMerc_MeleeComponent>(TEXT("Melee Component"));
 }
 
 // Called when the game starts or when spawned
@@ -171,6 +173,9 @@ void AMerc_PlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		
 		// Interact
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::TryBuyNearbyWeapon);
+
+		// Melee
+		EnhancedInputComponent->BindAction(MeleeAction, ETriggerEvent::Started, this, &AMerc_PlayerCharacter::Melee);
 	}
 	else
 	{
@@ -385,6 +390,16 @@ void AMerc_PlayerCharacter::TryBuyNearbyWeapon()
 	if (NearbyInteractable)
 	{
 		NearbyInteractable->Interact(this);
+	}
+}
+
+void AMerc_PlayerCharacter::Melee()
+{
+		UE_LOG(LogTemp, Error, TEXT("Melee Compo!!!!!!"));
+	if (MeleeComp)
+	{
+
+		MeleeComp->PerformMeleeAttack();
 	}
 }
 

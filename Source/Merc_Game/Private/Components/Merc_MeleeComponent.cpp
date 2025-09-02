@@ -35,10 +35,12 @@ void UMerc_MeleeComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 void UMerc_MeleeComponent::PerformMeleeAttack()
 {
-    if (!bCanAttack) return;
+    if (!bCanAttack) 
+        return;
 
     AActor* Owner = GetOwner();
-    if (!Owner) return;
+    if (!Owner) 
+        return;
 
     FVector Start = Owner->GetActorLocation();
     FVector ForwardVector = Owner->GetActorForwardVector();
@@ -57,10 +59,15 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
         UEngineTypes::ConvertToTraceType(ECC_GameTraceChannel1),
         false,
         IgnoredActors,
-        EDrawDebugTrace::ForOneFrame,
+        EDrawDebugTrace::ForDuration,
         HitResults,
-        true
+        true,
+		FLinearColor::Red,
+        FLinearColor::Green,
+		5.0f // Duration to display debug lines
     );
+
+    UE_LOG(LogTemp, Error, TEXT("Melee Accomplished!!!!"));
 
     if (bHit)
     {
@@ -77,7 +84,13 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
 
     // Start cooldown
     bCanAttack = false;
-    GetWorld()->GetTimerManager().SetTimerForNextTick([this]() { ResetAttackCooldown(); });
+    GetWorld()->GetTimerManager().SetTimer(
+        AttackCooldownTimerHandle,
+        this,
+        &UMerc_MeleeComponent::ResetAttackCooldown,
+        AttackCooldown,
+        false
+    );
 }
 
 void UMerc_MeleeComponent::ResetAttackCooldown()

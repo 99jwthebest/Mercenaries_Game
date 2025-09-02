@@ -43,8 +43,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
 	float AttackCooldown = 0.5f;
 
+
 private: 
 	bool bCanAttack = true;
+	FTimerHandle AttackCooldownTimerHandle;
 
 	void ResetAttackCooldown();
 
