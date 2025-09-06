@@ -3,6 +3,8 @@
 
 #include "Components/Merc_MeleeComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Animation/AnimInstance.h"
+#include "GameFramework/Character.h"
 
 // Sets default values for this component's properties
 UMerc_MeleeComponent::UMerc_MeleeComponent()
@@ -67,8 +69,6 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
 		5.0f // Duration to display debug lines
     );
 
-    UE_LOG(LogTemp, Error, TEXT("Melee Accomplished!!!!"));
-
     if (bHit)
     {
         for (auto& Hit : HitResults)
@@ -78,6 +78,24 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
             {
                 // Apply damage
                 UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, Owner->GetInstigatorController(), Owner, nullptr);
+            }
+        }
+    }
+
+    if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
+    {
+        if (UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance())
+        {
+            if (MeleeAttackMontage) 
+            {
+				Character->bUseControllerRotationYaw = false;
+                //AnimInstance->Montage_Play(MeleeAttackMontage);
+				Character->PlayAnimMontage(MeleeAttackMontage);
+                // Bind end just for this montage instance
+                FOnMontageEnded EndDelegate;
+                EndDelegate.BindUObject(this, &UMerc_MeleeComponent::HandleMontageEnded);
+                AnimInstance->Montage_SetEndDelegate(EndDelegate, MeleeAttackMontage);
+
             }
         }
     }
@@ -96,4 +114,20 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
 void UMerc_MeleeComponent::ResetAttackCooldown()
 {
 	bCanAttack = true;
+}
+
+void UMerc_MeleeComponent::HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+    if (Montage != MeleeAttackMontage)
+        return; // safety
+
+    if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
+    {
+        Character->bUseControllerRotationYaw = true;
+        if (UAnimInstance* Anim = Character->GetMesh()->GetAnimInstance())
+        {
+            FOnMontageEnded EndDelegate;
+            Anim->Montage_SetEndDelegate(EndDelegate, MeleeAttackMontage);
+        }
+	}
 }

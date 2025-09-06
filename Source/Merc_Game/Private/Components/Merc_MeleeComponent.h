@@ -42,12 +42,16 @@ public:
 	 // Optional: attack cooldown
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
 	float AttackCooldown = 0.5f;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
+	UAnimMontage* MeleeAttackMontage;
 
 private: 
 	bool bCanAttack = true;
 	FTimerHandle AttackCooldownTimerHandle;
 
 	void ResetAttackCooldown();
+
+	UFUNCTION()
+	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 };
