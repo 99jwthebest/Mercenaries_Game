@@ -24,9 +24,17 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-public:
 	void PerformMeleeAttack();
+	void MeleeTrace();
+	FVector MeleeTraceCalcuation();
 
+private:
+	void ResetAttackCooldown();
+
+	UFUNCTION()
+	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+public:
 	// Damage amount for the melee attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
 	float MeleeDamage = 25.0f;
@@ -48,10 +56,6 @@ public:
 private: 
 	bool bCanAttack = true;
 	FTimerHandle AttackCooldownTimerHandle;
-
-	void ResetAttackCooldown();
-
-	UFUNCTION()
-	void HandleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	FVector MeleeForwardVector;
 
 };

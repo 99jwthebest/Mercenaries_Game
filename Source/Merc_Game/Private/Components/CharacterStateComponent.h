@@ -15,6 +15,7 @@ enum class ECharacterStates : uint8
 	Death, //UMETA(DisplayName = "Option 4"),
 	Disabled, //UMETA(DisplayName = "Option 5"),
 	Parry,
+	MeleeAttack,
 };
 
 

@@ -40,13 +40,37 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
     if (!bCanAttack) 
         return;
 
+    if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
+    {
+        if (UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance())
+        {
+            if (MeleeAttackMontage) 
+            {
+				Character->bUseControllerRotationYaw = false;
+                //AnimInstance->Montage_Play(MeleeAttackMontage);
+				Character->PlayAnimMontage(MeleeAttackMontage);
+                // Bind end just for this montage instance
+                FOnMontageEnded EndDelegate;
+                EndDelegate.BindUObject(this, &UMerc_MeleeComponent::HandleMontageEnded);
+                AnimInstance->Montage_SetEndDelegate(EndDelegate, MeleeAttackMontage);
+				MeleeTraceCalcuation();
+            }
+        }
+    }
+
+}
+
+void UMerc_MeleeComponent::MeleeTrace()
+{
+    if (!bCanAttack)
+        return;
+
     AActor* Owner = GetOwner();
-    if (!Owner) 
+    if (!Owner)
         return;
 
     FVector Start = Owner->GetActorLocation();
-    FVector ForwardVector = Owner->GetActorForwardVector();
-    FVector End = Start + ForwardVector * MeleeRange;
+    FVector End = Start + MeleeForwardVector * MeleeRange;
 
     TArray<AActor*> IgnoredActors;
     IgnoredActors.Add(Owner);
@@ -64,9 +88,9 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
         EDrawDebugTrace::ForDuration,
         HitResults,
         true,
-		FLinearColor::Red,
+        FLinearColor::Red,
         FLinearColor::Green,
-		5.0f // Duration to display debug lines
+        5.0f // Duration to display debug lines
     );
 
     if (bHit)
@@ -82,24 +106,6 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
         }
     }
 
-    if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
-    {
-        if (UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance())
-        {
-            if (MeleeAttackMontage) 
-            {
-				Character->bUseControllerRotationYaw = false;
-                //AnimInstance->Montage_Play(MeleeAttackMontage);
-				Character->PlayAnimMontage(MeleeAttackMontage);
-                // Bind end just for this montage instance
-                FOnMontageEnded EndDelegate;
-                EndDelegate.BindUObject(this, &UMerc_MeleeComponent::HandleMontageEnded);
-                AnimInstance->Montage_SetEndDelegate(EndDelegate, MeleeAttackMontage);
-
-            }
-        }
-    }
-
     // Start cooldown
     bCanAttack = false;
     GetWorld()->GetTimerManager().SetTimer(
@@ -109,6 +115,17 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
         AttackCooldown,
         false
     );
+}
+
+FVector UMerc_MeleeComponent::MeleeTraceCalcuation()
+{
+    AActor* Owner = GetOwner();
+    if (!Owner)
+        return FVector();
+
+    MeleeForwardVector = Owner->GetActorForwardVector();
+
+	return MeleeForwardVector;
 }
 
 void UMerc_MeleeComponent::ResetAttackCooldown()

@@ -395,10 +395,9 @@ void AMerc_PlayerCharacter::TryBuyNearbyWeapon()
 
 void AMerc_PlayerCharacter::Melee()
 {
-		UE_LOG(LogTemp, Error, TEXT("Melee Compo!!!!!!"));
 	if (MeleeComp)
 	{
-
+		UE_LOG(LogTemp, Error, TEXT("Melee Compo!!!!!!"));
 		MeleeComp->PerformMeleeAttack();
 	}
 }
