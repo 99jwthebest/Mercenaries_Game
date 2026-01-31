@@ -102,6 +102,8 @@ void UMerc_MeleeComponent::MeleeTrace()
             {
                 // Apply damage
                 UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, Owner->GetInstigatorController(), Owner, nullptr);
+                UE_LOG(LogTemp, Log, TEXT("Dealt Melee %f damage to %s"), MeleeDamage, *HitActor->GetName());
+
             }
         }
     }

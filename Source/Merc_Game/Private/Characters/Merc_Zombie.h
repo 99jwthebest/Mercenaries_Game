@@ -62,4 +62,6 @@ protected:
 	
 	virtual void InitCapsuleColliders() override;
 	virtual void AddingDamageZones() override;
+	virtual bool CanBeKnockedBack() const override { return true; }
+
 };

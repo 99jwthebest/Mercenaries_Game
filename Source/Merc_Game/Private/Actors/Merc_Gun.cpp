@@ -77,35 +77,37 @@ void AMerc_Gun::PullTrigger()
 		// Damage
 		if (HitActor)
 		{
-			float DamageMultiplier = 1.0f;
-			float FinalDamage = Damage;
-
 			if (HitActor->GetClass()->ImplementsInterface(UHitDamageable::StaticClass()))
 			{
-				DamageMultiplier = IHitDamageable::Execute_GetDamageMultiplierFromComponent(HitActor, HitComp);
-				FinalDamage *= DamageMultiplier;
-			}
+				FHitSpec Spec;
+				Spec.HitKind = EHitKind::Bullet;
 
-			// Try adding score to the owner (shooter)
-			if (AActor* OwnerActor = GetOwner())
+				// Who fired
+				Spec.InstigatorActor = GetOwner(); // your player pawn most likely
+
+				// What got hit
+				Spec.HitComponent = HitComp;
+
+				// Base damage only (NO multiplier here)
+				Spec.BaseDamage = Damage;
+
+				// Bullet reaction defaults (you can keep these 0 for now)
+				Spec.ImpulseDir = ShotDirection;
+				Spec.ImpulseStrength = 0.f;     // optional: tiny flinch later
+				Spec.UpwardBoost = 0.f;
+				Spec.StunTime = 0.f;
+				Spec.bFaceInstigator = false;
+
+				IHitDamageable::Execute_ApplyHit(HitActor, Spec);
+
+				UE_LOG(LogTemp, Log, TEXT("Requested hit: BaseDamage=%f to %s"), Damage, *HitActor->GetName());
+			}
+			else
 			{
-				if (UStatTrackerComponent* StatTracker = OwnerActor->FindComponentByClass<UStatTrackerComponent>())
-				{
-					// Optional: Use a smarter score system, e.g. headshots = 100, body = 50, etc.
-					const bool bIsHeadshot = DamageMultiplier > 2.0f;
-					const int32 ScoreToAdd = bIsHeadshot ? 100 : 50;
-
-					StatTracker->AddScore(ScoreToAdd);
-					StatTracker->AddMoney(ScoreToAdd);
-					StatTracker->AddCombo(1);
-				}
+				// If it doesn't implement IHitDamageable, you can optionally still use TakeDamage
+				// but ideally everything damageable implements the interface.
+				// HitActor->TakeDamage(Damage, DamageEvent, OwnerController, this);
 			}
-
-			FPointDamageEvent DamageEvent(FinalDamage, Hit, ShotDirection, nullptr);
-			AController* OwnerController = GetOwnerController();
-			HitActor->TakeDamage(FinalDamage, DamageEvent, OwnerController, this);
-
-			UE_LOG(LogTemp, Log, TEXT("Dealt %f damage to %s"), FinalDamage, *HitActor->GetName());
 		}
 	}
 

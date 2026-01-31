@@ -41,20 +41,30 @@ void AMerc_BaseEnemy::Tick(float DeltaTime)
 
 float AMerc_BaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	const float DamageApplied = FMath::Min(CurrentHealth, DamageAmount);
-	CurrentHealth -= DamageApplied;
+	// Old simple implementation before ApplyHit, just in case
+	//const float DamageApplied = FMath::Min(CurrentHealth, DamageAmount);
+	//CurrentHealth -= DamageApplied;
 
-	UE_LOG(LogTemp, Warning, TEXT("Zombie took %f damage. Remaining HP: %f"), DamageApplied, CurrentHealth);
+	//UE_LOG(LogTemp, Warning, TEXT("Zombie took %f damage. Remaining HP: %f"), DamageApplied, CurrentHealth);
 
-	// Save the instigator for later (used in Die)
-	LastInstigator = EventInstigator;
+	//// Save the instigator for later (used in Die)
+	//LastInstigator = EventInstigator;
 
-	if (CurrentHealth <= 0.f)
-	{
-		Die();
-	}
+	//if (CurrentHealth <= 0.f)
+	//{
+	//	Die();
+	//}
 
-	return DamageApplied;
+	//return DamageApplied;
+
+	FHitSpec Spec;
+	Spec.HitKind = EHitKind::Other;
+	Spec.BaseDamage = DamageAmount;
+	Spec.InstigatorActor = EventInstigator ? EventInstigator->GetPawn() : nullptr;
+	Spec.HitComponent = nullptr; // TakeDamage doesn't tell us which component
+
+	IHitDamageable::Execute_ApplyHit(this, Spec);
+	return DamageAmount;
 }
 
 void AMerc_BaseEnemy::ResetAttackCooldown()
@@ -106,6 +116,50 @@ float AMerc_BaseEnemy::GetDamageMultiplierFromComponent_Implementation(UPrimitiv
 		}
 	}
 	return 1.0f;  // Default no-multiplier
+}
+
+void AMerc_BaseEnemy::ApplyHit_Implementation(const FHitSpec& Spec)
+{
+	if (bIsDead) return;
+
+	// 1) Determine controller instigator for score-credit (works with your existing Die() logic)
+	AController* InstigatorController = nullptr;
+
+	if (APawn* InstPawn = Cast<APawn>(Spec.InstigatorActor))
+	{
+		InstigatorController = InstPawn->GetController();
+	}
+	else if (AActor* InstActor = Spec.InstigatorActor)
+	{
+		// If later you pass a projectile or weapon actor, you can optionally pull controller differently.
+		// For now, leave nullptr if not a pawn.
+	}
+
+	// Keep your existing field updated so Die() can reward the killer
+	LastInstigator = InstigatorController;
+
+	// 2) Compute final damage using your existing multiplier helper
+	const float Multiplier = GetDamageMultiplierFromComponent_Implementation(Spec.HitComponent);
+	const float FinalDamage = FMath::Max(0.f, Spec.BaseDamage * Multiplier);
+
+	if (FinalDamage <= 0.f) return;
+
+	// 3) Apply health (authoritative truth lives here now)
+	const float DamageApplied = FMath::Min(CurrentHealth, FinalDamage);
+	CurrentHealth -= DamageApplied;
+
+	UE_LOG(LogTemp, Warning, TEXT("Enemy took %f damage (Base=%f, Mult=%f). Remaining HP: %f"),
+		DamageApplied, Spec.BaseDamage, Multiplier, CurrentHealth);
+
+	// 4) If dead, die (and don't do reaction unless you want death reactions)
+	if (CurrentHealth <= 0.f)
+	{
+		Die();
+		return;
+	}
+
+	// 5) Non-lethal reaction hooks
+	HandleHitReaction(Spec);
 }
 
 void AMerc_BaseEnemy::NotifyEnemyDead()
@@ -165,5 +219,81 @@ void AMerc_BaseEnemy::AddingDamageZones()
 		}
 	}
 */
+}
+
+void AMerc_BaseEnemy::HandleHitReaction(const FHitSpec& Spec)
+{
+	// Optionally rotate to face the instigator
+	FaceInstigatorIfNeeded(Spec);
+
+	// Apply knockback only if this enemy opts in
+	ApplyKnockbackIfAllowed(Spec);
+
+	// Apply stun (base supports it; child can opt out if needed)
+	if (Spec.StunTime > 0.f)
+	{
+		ApplyStunIfAllowed(Spec.StunTime);
+	}
+
+	// Optional: play hit react montages per HitKind in derived classes
+	// Base class does nothing here so you don't force every enemy to have animations.
+}
+
+void AMerc_BaseEnemy::FaceInstigatorIfNeeded(const FHitSpec& Spec)
+{
+	if (!Spec.bFaceInstigator || !Spec.InstigatorActor) return;
+
+	const FVector ToInst = (Spec.InstigatorActor->GetActorLocation() - GetActorLocation());
+	if (ToInst.IsNearlyZero()) return;
+
+	const FRotator NewRot = FRotationMatrix::MakeFromX(ToInst).Rotator();
+	SetActorRotation(FRotator(0.f, NewRot.Yaw, 0.f));
+}
+
+void AMerc_BaseEnemy::ApplyKnockbackIfAllowed(const FHitSpec& Spec)
+{
+	if (!CanBeKnockedBack()) return;
+
+	if (Spec.ImpulseStrength <= 0.f) return;
+	if (Spec.ImpulseDir.IsNearlyZero()) return;
+
+	const FVector Dir = Spec.ImpulseDir.GetSafeNormal();
+	const FVector LaunchVel = (Dir * Spec.ImpulseStrength) + (FVector::UpVector * Spec.UpwardBoost);
+
+	LaunchCharacter(LaunchVel, true, true);
+}
+
+void AMerc_BaseEnemy::ApplyStunIfAllowed(float Duration)
+{
+	if (!CanBeStunned()) return;
+	if (Duration <= 0.f) return;
+
+	bIsStunned = true;
+
+	// Simple, engine-agnostic “stun”: stop movement for now.
+	// If you use AIController logic/BT, we can stop brain logic here too.
+	GetCharacterMovement()->StopMovementImmediately();
+
+	// If you have an AIController and want to freeze it:
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		AIC->StopMovement();
+		// Optional later:
+		// if (UBrainComponent* Brain = AIC->GetBrainComponent()) Brain->StopLogic(TEXT("Stunned"));
+	}
+
+	GetWorldTimerManager().ClearTimer(StunTimer);
+	GetWorldTimerManager().SetTimer(StunTimer, this, &AMerc_BaseEnemy::ClearStun, Duration, false);
+}
+
+void AMerc_BaseEnemy::ClearStun()
+{
+	bIsStunned = false;
+
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		// Optional later:
+		// if (UBrainComponent* Brain = AIC->GetBrainComponent()) Brain->RestartLogic();
+	}
 }
 

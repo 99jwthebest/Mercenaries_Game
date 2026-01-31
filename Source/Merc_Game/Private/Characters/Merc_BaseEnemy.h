@@ -58,6 +58,11 @@ protected:
 	AController* LastInstigator = nullptr;
 	APawn* TargetPlayer;
 
+	// Optional state gate if you want to stop AI/actions during stun
+	UPROPERTY(VisibleAnywhere, Category = "State")
+	bool bIsStunned = false;
+
+	FTimerHandle StunTimer;
 
 public:
 
@@ -84,6 +89,8 @@ public:
 
 	virtual float GetDamageMultiplierFromComponent_Implementation(UPrimitiveComponent* HitComponent) const override;
 
+	virtual void ApplyHit_Implementation(const FHitSpec& Spec) override;
+
 	void NotifyEnemyDead();
 
 protected:
@@ -105,5 +112,19 @@ protected:
 	* Should be called in BeginPlay. 
 	*/
 	virtual void AddingDamageZones();
+
+	// Child classes can opt in/out
+	virtual bool CanBeKnockedBack() const { return false; }
+	virtual bool CanBeStunned() const { return true; }
+
+	// Called by ApplyHit after damage is applied (unless dead)
+	virtual void HandleHitReaction(const FHitSpec& Spec);
+
+	// Helpers
+	void FaceInstigatorIfNeeded(const FHitSpec& Spec);
+	void ApplyKnockbackIfAllowed(const FHitSpec& Spec);
+	void ApplyStunIfAllowed(float Duration);
+
+	void ClearStun();
 
 };
