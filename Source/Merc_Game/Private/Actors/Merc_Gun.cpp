@@ -79,24 +79,12 @@ void AMerc_Gun::PullTrigger()
 		{
 			if (HitActor->GetClass()->ImplementsInterface(UHitDamageable::StaticClass()))
 			{
-				FHitSpec Spec;
-				Spec.HitKind = EHitKind::Bullet;
-
-				// Who fired
-				Spec.InstigatorActor = GetOwner(); // your player pawn most likely
-
-				// What got hit
-				Spec.HitComponent = HitComp;
-
-				// Base damage only (NO multiplier here)
-				Spec.BaseDamage = Damage;
-
-				// Bullet reaction defaults (you can keep these 0 for now)
-				Spec.ImpulseDir = ShotDirection;
-				Spec.ImpulseStrength = 0.f;     // optional: tiny flinch later
-				Spec.UpwardBoost = 0.f;
-				Spec.StunTime = 0.f;
-				Spec.bFaceInstigator = false;
+				const FHitSpec Spec = FHitSpec::MakeBullet(
+					GetOwner(), // Instigator
+					HitComp,
+					Damage,
+					ShotDirection
+				);
 
 				IHitDamageable::Execute_ApplyHit(HitActor, Spec);
 

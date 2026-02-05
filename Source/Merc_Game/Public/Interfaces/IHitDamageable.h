@@ -49,6 +49,60 @@ struct FHitSpec
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	bool bFaceInstigator = false;
+
+    // ---------- Factory helpers ----------
+    static FHitSpec MakeBullet(AActor* Instigator, UPrimitiveComponent* HitComp, float InBaseDamage, const FVector& ShotDir)
+    {
+        FHitSpec Spec;
+        Spec.HitKind = EHitKind::Bullet;
+        Spec.InstigatorActor = Instigator;
+        Spec.HitComponent = HitComp;
+        Spec.BaseDamage = InBaseDamage;
+
+        // Bullets default to no knockback/stun
+        // Keep direction if you later want directional flinch or decals.
+        Spec.ImpulseDir = ShotDir;
+
+        Spec.ImpulseStrength = 0.f;
+        Spec.UpwardBoost = 0.f;
+        Spec.StunTime = 0.f;
+        Spec.bFaceInstigator = false;
+        return Spec;
+    }
+
+    static FHitSpec MakeMelee(AActor* Instigator, UPrimitiveComponent* HitComp, float InBaseDamage, const FVector& Dir,
+        float KnockbackStrength, float InUpwardBoost, float InStunTime, bool bInFaceInstigator = true)
+    {
+        FHitSpec Spec;
+        Spec.HitKind = EHitKind::Melee;
+        Spec.InstigatorActor = Instigator;
+        Spec.HitComponent = HitComp;
+        Spec.BaseDamage = InBaseDamage;
+
+        Spec.ImpulseDir = Dir;
+        Spec.ImpulseStrength = KnockbackStrength;
+        Spec.UpwardBoost = InUpwardBoost;
+        Spec.StunTime = InStunTime;
+        Spec.bFaceInstigator = bInFaceInstigator;
+        return Spec;
+    }
+
+    static FHitSpec MakeExplosion(AActor* Instigator, UPrimitiveComponent* HitComp, float InBaseDamage, const FVector& Dir,
+        float KnockbackStrength, float InUpwardBoost, float InStunTime, bool bInFaceInstigator = false)
+    {
+        FHitSpec Spec;
+        Spec.HitKind = EHitKind::Explosion;
+        Spec.InstigatorActor = Instigator;
+        Spec.HitComponent = HitComp;
+        Spec.BaseDamage = InBaseDamage;
+
+        Spec.ImpulseDir = Dir;
+        Spec.ImpulseStrength = KnockbackStrength;
+        Spec.UpwardBoost = InUpwardBoost;
+        Spec.StunTime = InStunTime;
+        Spec.bFaceInstigator = bInFaceInstigator;
+        return Spec;
+    }
 };
 
 

@@ -11,6 +11,8 @@
 // Delegate signature: int32 CurrentAmmo, int32 MaxAmmo
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDeath, AMerc_BaseEnemy*, EnemyDied);
 
+class UStatTrackerComponent;
+
 UCLASS()
 class AMerc_BaseEnemy : public ACharacter, public IHitDamageable
 {
@@ -126,5 +128,9 @@ protected:
 	void ApplyStunIfAllowed(float Duration);
 
 	void ClearStun();
+
+	UStatTrackerComponent* GetInstigatorStatTracker(const FHitSpec& Spec) const;
+	void AwardOnHit(const FHitSpec& Spec, float Multiplier);   // optional
+	void AwardOnKill(const FHitSpec& Spec, float Multiplier);
 
 };

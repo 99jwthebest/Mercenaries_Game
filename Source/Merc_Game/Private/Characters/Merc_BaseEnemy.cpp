@@ -81,18 +81,18 @@ void AMerc_BaseEnemy::Die()
 	NotifyEnemyDead();
 
 	// Reward score to killer
-	if (LastInstigator && LastInstigator->GetPawn())
-	{
-		AActor* Killer = LastInstigator->GetPawn(); // Could be player or bot
+	//if (LastInstigator && LastInstigator->GetPawn())
+	//{
+	//	AActor* Killer = LastInstigator->GetPawn(); // Could be player or bot
 
-		if (UStatTrackerComponent* StatTracker = Killer->FindComponentByClass<UStatTrackerComponent>())
-		{
-			// Example: +200 for kill
-			StatTracker->AddScore(200);
-			StatTracker->AddMoney(200);
-			StatTracker->AddKill();  // You can create AddKill() method too
-		}
-	}
+	//	if (UStatTrackerComponent* StatTracker = Killer->FindComponentByClass<UStatTrackerComponent>())
+	//	{
+	//		// Example: +200 for kill
+	//		StatTracker->AddScore(200);
+	//		StatTracker->AddMoney(200);
+	//		StatTracker->AddKill();  // You can create AddKill() method too
+	//	}
+	//}  **** Probably delete later!!!!! *******
 
 	// Optional VFX
 	if (DeathEffect)
@@ -154,9 +154,15 @@ void AMerc_BaseEnemy::ApplyHit_Implementation(const FHitSpec& Spec)
 	// 4) If dead, die (and don't do reaction unless you want death reactions)
 	if (CurrentHealth <= 0.f)
 	{
+		// Award score BEFORE Die() destroys controller/collision and such
+		AwardOnKill(Spec, Multiplier);
+
 		Die();
 		return;
 	}
+
+	// Optional: award hit score here (if you want per-hit points)
+	// AwardOnHit(Spec, Multiplier);
 
 	// 5) Non-lethal reaction hooks
 	HandleHitReaction(Spec);
@@ -295,5 +301,49 @@ void AMerc_BaseEnemy::ClearStun()
 		// Optional later:
 		// if (UBrainComponent* Brain = AIC->GetBrainComponent()) Brain->RestartLogic();
 	}
+}
+
+UStatTrackerComponent* AMerc_BaseEnemy::GetInstigatorStatTracker(const FHitSpec& Spec) const
+{
+	APawn* InstPawn = Cast<APawn>(Spec.InstigatorActor);
+	if (!InstPawn) return nullptr;
+
+	return InstPawn->FindComponentByClass<UStatTrackerComponent>();
+}
+
+void AMerc_BaseEnemy::AwardOnHit(const FHitSpec& Spec, float Multiplier)
+{
+
+}
+
+void AMerc_BaseEnemy::AwardOnKill(const FHitSpec& Spec, float Multiplier)
+{
+	UStatTrackerComponent* StatTracker = GetInstigatorStatTracker(Spec);
+	if (!StatTracker) return;
+
+	// Decide headshot based on multiplier (simple + consistent)
+	const bool bIsHeadshot = (Multiplier >= 2.0f);  // ****** probably want to make it a variable ******///
+
+	// You control these values
+	const int32 KillScore = 200;  // ****** make variables !!!!!!!
+	const int32 KillMoney = 200;
+
+	StatTracker->AddKill();
+	StatTracker->AddScore(KillScore);
+	StatTracker->AddMoney(KillMoney);
+
+	// ******** Probably will keep these bonuses just adjust values and make variables lol!!!!
+	if (bIsHeadshot)
+	{
+		StatTracker->AddHeadshot();
+
+		// bonus score/money if you want
+		const int32 HeadshotBonus = 100;
+		StatTracker->AddScore(HeadshotBonus);
+		StatTracker->AddMoney(HeadshotBonus);
+	}
+
+	// Optional: combo increments on kill (or do this on hit)
+	StatTracker->AddCombo(1);
 }
 

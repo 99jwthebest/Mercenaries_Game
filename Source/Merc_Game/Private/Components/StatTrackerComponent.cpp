@@ -49,6 +49,12 @@ void UStatTrackerComponent::AddKill()
 	//}
 }
 
+void UStatTrackerComponent::AddHeadshot()
+{
+	Headshots++;
+	UE_LOG(LogTemp, Warning, TEXT("Headshots = %d"), Headshots);
+}
+
 void UStatTrackerComponent::ResetCombo()
 {
 	Combo = 0;

@@ -51,6 +51,7 @@ public:
 	void AddScore(int32 Amount);
 	void AddMoney(int32 Amount);
 	void AddKill();
+	void AddHeadshot();
 	void ResetCombo();
 	void AddCombo(int32 Amount);
 	void UpdateSurvivalTime(float DeltaSeconds);
