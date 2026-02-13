@@ -139,8 +139,10 @@ void AMerc_BaseEnemy::ApplyHit_Implementation(const FHitSpec& Spec)
 	LastInstigator = InstigatorController;
 
 	// 2) Compute final damage using your existing multiplier helper
-	const float Multiplier = GetDamageMultiplierFromComponent_Implementation(Spec.HitComponent);
-	const float FinalDamage = FMath::Max(0.f, Spec.BaseDamage * Multiplier);
+	float DamageMultiplier = 1.0f;
+	if(Spec.HitKind == EHitKind::Bullet)
+		DamageMultiplier = GetDamageMultiplierFromComponent_Implementation(Spec.HitComponent);
+	const float FinalDamage = FMath::Max(0.f, Spec.BaseDamage * DamageMultiplier);
 
 	if (FinalDamage <= 0.f) return;
 
@@ -149,13 +151,13 @@ void AMerc_BaseEnemy::ApplyHit_Implementation(const FHitSpec& Spec)
 	CurrentHealth -= DamageApplied;
 
 	UE_LOG(LogTemp, Warning, TEXT("Enemy took %f damage (Base=%f, Mult=%f). Remaining HP: %f"),
-		DamageApplied, Spec.BaseDamage, Multiplier, CurrentHealth);
+		DamageApplied, Spec.BaseDamage, DamageMultiplier, CurrentHealth);
 
 	// 4) If dead, die (and don't do reaction unless you want death reactions)
 	if (CurrentHealth <= 0.f)
 	{
 		// Award score BEFORE Die() destroys controller/collision and such
-		AwardOnKill(Spec, Multiplier);
+		AwardOnKill(Spec, DamageMultiplier);
 
 		Die();
 		return;

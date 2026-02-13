@@ -2,9 +2,11 @@
 
 
 #include "Components/Merc_MeleeComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/IHitDamageable.h"
+#include "Kismet/GameplayStatics.h"
+
 
 // Sets default values for this component's properties
 UMerc_MeleeComponent::UMerc_MeleeComponent()
@@ -100,10 +102,28 @@ void UMerc_MeleeComponent::MeleeTrace()
             AActor* HitActor = Hit.GetActor();
             if (HitActor)
             {
-                // Apply damage
-                UGameplayStatics::ApplyDamage(HitActor, MeleeDamage, Owner->GetInstigatorController(), Owner, nullptr);
-                UE_LOG(LogTemp, Log, TEXT("Dealt Melee %f damage to %s"), MeleeDamage, *HitActor->GetName());
+                if (HitActor->GetClass()->ImplementsInterface(UHitDamageable::StaticClass()))
+                {
+                    UPrimitiveComponent* HitComp = Hit.Component.Get();
 
+                    // Direction: use your cached vector (NOT animation-rotated forward)
+                    const FVector Dir = MeleeForwardVector.GetSafeNormal();
+
+                    const FHitSpec Spec = FHitSpec::MakeMelee(
+                        Owner,        // Instigator
+                        HitComp,      // Hit component for multipliers
+                        MeleeDamage,
+                        Dir,
+                        KnockbackStrength,
+                        UpwardBoost,
+                        StunTime,
+                        true          // Face instigator (RE4 style)
+                    );
+
+                    IHitDamageable::Execute_ApplyHit(HitActor, Spec);
+
+                    UE_LOG(LogTemp, Log, TEXT("Requested MELEE hit: BaseDamage=%f to %s"), MeleeDamage, *HitActor->GetName());
+                }
             }
         }
     }
@@ -123,7 +143,7 @@ FVector UMerc_MeleeComponent::MeleeTraceCalcuation()
 {
     AActor* Owner = GetOwner();
     if (!Owner)
-        return FVector();
+        return FVector::ZeroVector;
 
     MeleeForwardVector = Owner->GetActorForwardVector();
 

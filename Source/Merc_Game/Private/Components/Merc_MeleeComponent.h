@@ -37,15 +37,24 @@ private:
 public:
 	// Damage amount for the melee attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
-	float MeleeDamage = 25.0f;
+	float MeleeDamage = 50.0f;
 
 	// Range of the melee attack
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Trace")
 	float MeleeRange = 150.0f;
 
-	// Collision channel for the melee attack
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
-	//TEnumAsByte<ECollisionChannel> MeleeTraceChannel = ECC_Pawn;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Trace")
+	float MeleeRadius = 50.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Knockback")
+	float KnockbackStrength = 900.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Knockback")
+	float UpwardBoost = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Stun")
+	float StunTime = 1.0f;
+
 
 	 // Optional: attack cooldown
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")

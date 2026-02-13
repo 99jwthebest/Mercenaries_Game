@@ -9,14 +9,14 @@ void UMerc_MeleeAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBa
 {
 	Super::Notify(MeshComp, Animation, EventReference);
 
-    UE_LOG(LogTemp, Warning, TEXT("triggering notify"))
-        if (!MeshComp || !MeshComp->GetWorld()) // Ensure MeshComp and World are valid
+    if (!MeshComp || !MeshComp->GetWorld()) // Ensure MeshComp and World are valid
             return;
 
     const AActor* OwnerActor = MeshComp->GetOwner();
 
     if (!OwnerActor || !OwnerActor->GetWorld()->IsGameWorld()) // Ensure it's a valid actor in a game world
         return;
+    UE_LOG(LogTemp, Warning, TEXT("triggering Melee notify"))
 
     PlayerCharacter = Cast<ACharacter>(MeshComp->GetOwner());
 
