@@ -55,21 +55,41 @@ void UMerc_MeleeComponent::PerformMeleeAttack()
                 FOnMontageEnded EndDelegate;
                 EndDelegate.BindUObject(this, &UMerc_MeleeComponent::HandleMontageEnded);
                 AnimInstance->Montage_SetEndDelegate(EndDelegate, MeleeAttackMontage);
-				MeleeTraceCalcuation();
+                CacheMeleeForwardVector();
+				StartAttackCooldown();
             }
         }
     }
-
 }
 
-void UMerc_MeleeComponent::MeleeTrace()
+void UMerc_MeleeComponent::OnMeleeAnimNotify()
 {
-    if (!bCanAttack)
-        return;
+    // optional: allow trace only if currently attacking
+    // if (!bIsAttacking) return;
 
+	ApplyMeleeHits(MeleeTrace());
+}
+
+FVector UMerc_MeleeComponent::CacheMeleeForwardVector()
+{
     AActor* Owner = GetOwner();
     if (!Owner)
-        return;
+        return FVector::ZeroVector;
+    // below is optional tweak if we want the trace to start in a more accurate position
+    // const FVector Start = Owner->GetActorLocation() + FVector(0, 0, 50.f);
+
+    MeleeForwardVector = Owner->GetActorForwardVector();
+
+	return MeleeForwardVector;
+}
+
+TArray<FHitResult> UMerc_MeleeComponent::MeleeTrace() const
+{
+    TArray<FHitResult> HitResults;
+    
+    AActor* Owner = GetOwner();
+    if (!Owner)
+        return HitResults;
 
     FVector Start = Owner->GetActorLocation();
     FVector End = Start + MeleeForwardVector * MeleeRange;
@@ -77,7 +97,6 @@ void UMerc_MeleeComponent::MeleeTrace()
     TArray<AActor*> IgnoredActors;
     IgnoredActors.Add(Owner);
 
-    TArray<FHitResult> HitResults;
 
     bool bHit = UKismetSystemLibrary::SphereTraceMulti(
         GetWorld(),
@@ -95,59 +114,62 @@ void UMerc_MeleeComponent::MeleeTrace()
         5.0f // Duration to display debug lines
     );
 
-    if (bHit)
-    {
-        for (auto& Hit : HitResults)
-        {
-            AActor* HitActor = Hit.GetActor();
-            if (HitActor)
-            {
-                if (HitActor->GetClass()->ImplementsInterface(UHitDamageable::StaticClass()))
-                {
-                    UPrimitiveComponent* HitComp = Hit.Component.Get();
-
-                    // Direction: use your cached vector (NOT animation-rotated forward)
-                    const FVector Dir = MeleeForwardVector.GetSafeNormal();
-
-                    const FHitSpec Spec = FHitSpec::MakeMelee(
-                        Owner,        // Instigator
-                        HitComp,      // Hit component for multipliers
-                        MeleeDamage,
-                        Dir,
-                        KnockbackStrength,
-                        UpwardBoost,
-                        StunTime,
-                        true          // Face instigator (RE4 style)
-                    );
-
-                    IHitDamageable::Execute_ApplyHit(HitActor, Spec);
-
-                    UE_LOG(LogTemp, Log, TEXT("Requested MELEE hit: BaseDamage=%f to %s"), MeleeDamage, *HitActor->GetName());
-                }
-            }
-        }
-    }
-
-    // Start cooldown
-    bCanAttack = false;
-    GetWorld()->GetTimerManager().SetTimer(
-        AttackCooldownTimerHandle,
-        this,
-        &UMerc_MeleeComponent::ResetAttackCooldown,
-        AttackCooldown,
-        false
-    );
+    return HitResults;
 }
 
-FVector UMerc_MeleeComponent::MeleeTraceCalcuation()
+void UMerc_MeleeComponent::ApplyMeleeHits(const TArray<FHitResult>& HitResults)
 {
     AActor* Owner = GetOwner();
-    if (!Owner)
-        return FVector::ZeroVector;
+    if (!Owner) 
+        return;
 
-    MeleeForwardVector = Owner->GetActorForwardVector();
+    // Avoid multi-hitting the same enemy in one swing
+    TSet<TWeakObjectPtr<AActor>> HitActorsThisSwing;
 
-	return MeleeForwardVector;
+    const FVector Dir = MeleeForwardVector.GetSafeNormal();
+
+    for (const FHitResult& Hit : HitResults)
+    {
+        AActor* HitActor = Hit.GetActor();
+        if (!HitActor) 
+            continue;
+
+        if (HitActorsThisSwing.Contains(HitActor)) 
+            continue;
+        HitActorsThisSwing.Add(HitActor);
+
+        if (!HitActor->GetClass()->ImplementsInterface(UHitDamageable::StaticClass()))
+            continue;
+
+        UPrimitiveComponent* HitComp = Hit.Component.Get();
+
+        const FHitSpec Spec = FHitSpec::MakeMelee(
+            Owner,
+            HitComp,
+            MeleeDamage,
+            Dir,
+            KnockbackStrength,
+            UpwardBoost,
+            StunTime,
+            true
+        );
+
+        IHitDamageable::Execute_ApplyHit(HitActor, Spec);
+
+        UE_LOG(LogTemp, Log, TEXT("Requested MELEE hit: BaseDamage=%f to %s"), MeleeDamage, *HitActor->GetName());
+    }
+}
+
+void UMerc_MeleeComponent::StartAttackCooldown()
+{
+   bCanAttack = false;
+   GetWorld()->GetTimerManager().SetTimer(
+       AttackCooldownTimerHandle,
+       this,
+       &UMerc_MeleeComponent::ResetAttackCooldown,
+       AttackCooldown,
+       false
+   );
 }
 
 void UMerc_MeleeComponent::ResetAttackCooldown()

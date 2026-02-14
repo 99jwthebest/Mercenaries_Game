@@ -25,10 +25,13 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void PerformMeleeAttack();
-	void MeleeTrace();
-	FVector MeleeTraceCalcuation();
+	void OnMeleeAnimNotify(); // This function will be called from the animation notify
 
 private:
+	FVector CacheMeleeForwardVector();
+	TArray<FHitResult> MeleeTrace() const;
+	void ApplyMeleeHits(const TArray<FHitResult>& HitResults);
+	void StartAttackCooldown();
 	void ResetAttackCooldown();
 
 	UFUNCTION()

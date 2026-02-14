@@ -27,6 +27,6 @@ void UMerc_MeleeAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBa
         return;
 
     //if (!CharacterMoveComp->IsRaging())
-    MeleeComp->MeleeTrace();
+    MeleeComp->OnMeleeAnimNotify();
             //DrawWeaponCollision(End, Radius, AmountOfDamage, DamageTypeClass);
 }
